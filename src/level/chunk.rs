@@ -3,11 +3,7 @@ use std::sync::Mutex;
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt},
-    level::{
-        level::Level,
-        tesselator::Tesselator,
-        tile::{self, Tile},
-    },
+    level::{level::Level, tesselator::Tesselator, tile::Tile},
     phys::aabb::AABB,
 };
 
@@ -90,5 +86,18 @@ impl Chunk {
                 gl::EndList();
             }
         }
+    }
+
+    pub fn render(&mut self, layer: u32) {
+        if self.dirty {
+            self.rebuild(0);
+            self.rebuild(1);
+        }
+
+        unsafe { gl::CallList(self.lists + layer) };
+    }
+
+    pub fn set_dirty(&mut self) {
+        self.dirty = true;
     }
 }
