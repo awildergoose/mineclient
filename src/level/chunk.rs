@@ -3,7 +3,11 @@ use std::sync::Mutex;
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt},
-    level::{level::Level, tesselator::Tesselator},
+    level::{
+        level::Level,
+        tesselator::Tesselator,
+        tile::{self, Tile},
+    },
     phys::aabb::AABB,
 };
 
@@ -62,18 +66,17 @@ impl Chunk {
                 gl::BindTexture(3553, *CHUNK_TEXTURE.lock().unwrap());
             }
             self.t.init();
-            let mut tiles = 0;
 
             for x in self.x0..self.x1 {
                 for y in self.y0..self.y1 {
                     for z in self.z0..self.z1 {
                         if self.level.is_tile(x, y, z) {
                             let tex = if y == self.level.depth * 2 / 3 { 0 } else { 1 };
-                            tiles += 1;
+
                             if tex == 0 {
-                                // TODO
+                                Tile::ROCK.render(&mut self.t, &self.level, layer as i32, x, y, z);
                             } else {
-                                // TODO
+                                Tile::GRASS.render(&mut self.t, &self.level, layer as i32, x, y, z);
                             }
                         }
                     }
@@ -81,6 +84,7 @@ impl Chunk {
             }
 
             self.t.flush();
+
             unsafe {
                 gl::Disable(3553);
                 gl::EndList();
