@@ -36,9 +36,13 @@ pub fn is_key_down(key: Key) -> bool {
     set.contains(&key)
 }
 
-// LWJGL
+// TODO
 
-pub fn set_display_mode(width: JInt, height: JInt) {}
+pub fn is_mouse_button_down(button: u8) -> bool {
+    false
+}
+
+pub fn init_display(width: JInt, height: JInt) {}
 pub fn grab_mouse() {}
 pub fn is_display_close_requested() -> JBoolean {
     false
@@ -51,3 +55,5 @@ pub fn get_mouse_dx() -> JFloat {
 pub fn get_mouse_dy() -> JFloat {
     0.0
 }
+
+pub fn update_display() {}

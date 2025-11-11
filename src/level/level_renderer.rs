@@ -90,7 +90,7 @@ impl LevelRenderer {
         renderer
     }
 
-    pub fn render(&mut self, _player: Player, layer: u32) {
+    pub fn render(&mut self, _player: &Player, layer: u32) {
         chunk::REBUILT_THIS_FRAME.store(0, Ordering::SeqCst);
         let frustum = frustum::get_frustum();
 
@@ -165,7 +165,7 @@ impl LevelRenderer {
         }
     }
 
-    pub fn render_hit(&mut self, h: HitResult) {
+    pub fn render_hit(&mut self, h: &HitResult) {
         unsafe {
             gl::Enable(3042);
             gl::BlendFunc(770, 1);

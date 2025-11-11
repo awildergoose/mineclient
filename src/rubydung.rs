@@ -7,8 +7,8 @@ use crate::{
     },
     hit_result::HitResult,
     java::{
-        JFloat, JInt, get_milli_time, get_mouse_dx, get_mouse_dy, is_display_close_requested,
-        is_key_down, set_display_mode,
+        JFloat, JInt, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse, init_display,
+        is_display_close_requested, is_key_down, is_mouse_button_down, update_display,
     },
     level::{chunk, level::Level, level_renderer::LevelRenderer, player::Player},
     timer::Timer,
@@ -73,7 +73,7 @@ impl RubyDung {
             (col & 0xFF) as f32 / 255.0,
             1.0,
         ];
-        set_display_mode(1024, 768);
+        init_display(1024, 768);
         self.width = 1024;
         self.height = 768;
         unsafe {
@@ -94,7 +94,7 @@ impl RubyDung {
         self.level_renderer = Some(LevelRenderer::new(level.clone()));
         self.player = Some(Player::new(level.clone()));
 
-        // grab mouse
+        grab_mouse();
     }
 
     pub fn destroy(&mut self) {
@@ -242,6 +242,95 @@ impl RubyDung {
     pub fn render(&mut self, a: JFloat) {
         let xo = get_mouse_dx();
         let yo = get_mouse_dy();
+        self.player.as_mut().unwrap().turn(xo, yo);
+        self.pick(a);
+
+        let hito = self.hit_result.as_mut();
+        if is_mouse_button_down(1)
+            && let Some(ref hit) = hito
+        {
+            self.level
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .set_tile(hit.x, hit.y, hit.z, 0);
+        }
+
+        if is_mouse_button_down(0)
+            && let Some(ref hit) = hito
+        {
+            let mut x = hit.x;
+            let mut y = hit.y;
+            let mut z = hit.z;
+            if hit.f == 0 {
+                y -= 1;
+            }
+
+            if hit.f == 1 {
+                y += 1;
+            }
+
+            if hit.f == 2 {
+                z -= 1;
+            }
+
+            if hit.f == 3 {
+                z += 1;
+            }
+
+            if hit.f == 4 {
+                x -= 1;
+            }
+
+            if hit.f == 5 {
+                x += 1;
+            }
+
+            self.level
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .set_tile(x, y, z, 1);
+        }
+
+        // TODO check if Return = Backspace?
+        if is_key_down(glfw::Key::Backspace) {
+            self.level.as_ref().unwrap().borrow().save();
+        }
+
+        unsafe {
+            gl::Clear(16640);
+            self.setup_camera(a);
+            gl::Enable(2884);
+            gl::Enable(2912);
+            gl::Fogi(2917, 2048);
+            gl::Fogf(2914, 0.2);
+            gl::Fogfv(2918, self.fog_color.as_mut_ptr() as *mut _);
+            gl::Disable(2912);
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render(self.player.as_ref().unwrap(), 0);
+            gl::Enable(2912);
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render(self.player.as_ref().unwrap(), 1);
+            gl::Disable(3553);
+
+            if let Some(ref hit) = self.hit_result {
+                self.level_renderer
+                    .as_mut()
+                    .unwrap()
+                    .borrow_mut()
+                    .render_hit(hit);
+            }
+
+            gl::Disable(2912);
+            update_display();
+        }
     }
 }
 
