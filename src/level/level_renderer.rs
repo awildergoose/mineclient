@@ -237,7 +237,6 @@ impl LevelRenderer {
     }
 
     pub fn on_tile_changed(&mut self, x: JInt, y: JInt, z: JInt) {
-        println!("set dirty tile");
         self.set_dirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
     }
 

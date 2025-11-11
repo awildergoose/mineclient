@@ -133,6 +133,5 @@ impl Chunk {
 
     pub fn set_dirty(&mut self) {
         self.dirty = true;
-        println!("dirty");
     }
 }
