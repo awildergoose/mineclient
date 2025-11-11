@@ -112,11 +112,7 @@ pub fn init_display(width: JInt, height: JInt) {
         }
 
         let mut glfw = glfw::init(glfw::fail_on_errors).expect("Failed to initialize GLFW");
-
         glfw.window_hint(glfw::WindowHint::ContextVersion(2, 1));
-        // glfw.window_hint(glfw::WindowHint::OpenGlProfile(
-        //     glfw::OpenGlProfileHint::Core,
-        // ));
 
         let (mut window, events) = glfw
             .create_window(
@@ -202,9 +198,6 @@ pub fn is_display_close_requested() -> JBoolean {
             requested = true;
         }
     });
-    if requested {
-        println!("LEAVING");
-    }
     requested
 }
 
