@@ -1,18 +1,5 @@
-# done
+# MineClient
 
--   level/Chunk
--   level/Frustum
--   level/LevelListener
--   level/LevelRenderer
--   level/Player
--   level/Tesselator
--   level/Tile
--   phys/AABB
--   Timer
--   HitResult
--   Textures
--   RubyDung
+This project aims to recreate Minecraft versions from the very start until however long this project exists<br>
 
-# partial
-
--   level/Level (missing load, save)
+This project currently is a replica of the Minecraft version rd-132211
