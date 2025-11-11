@@ -1,8 +1,9 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::c_void;
-use std::path::Path;
 use std::sync::{Mutex, OnceLock};
+
+use image::{DynamicImage, ImageResult};
 
 use crate::gl;
 use crate::gl::types::{GLenum, GLint, GLsizei};
@@ -29,6 +30,13 @@ unsafe extern "C" {
     ) -> GLint;
 }
 
+fn resolve_texture(name: &str) -> ImageResult<DynamicImage> {
+    match name {
+        "terrain.png" => image::load_from_memory(include_bytes!("../assets/terrain.png")),
+        _ => panic!("tried to resolve unknown texture: {}", name),
+    }
+}
+
 impl Textures {
     pub fn new() -> Self {
         Self {
@@ -37,13 +45,13 @@ impl Textures {
         }
     }
 
+    #[inline(always)]
     pub fn load_texture(&self, resource_name: &str, mode: i32) -> u32 {
         if let Some(&id) = self.id_map.borrow().get(resource_name) {
             return id;
         }
 
-        let path = Path::new(resource_name);
-        let img = image::open(path)
+        let img = resolve_texture(resource_name)
             .unwrap_or_else(|_| panic!("Failed to load texture: {}", resource_name))
             .into_rgba8();
 
