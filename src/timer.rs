@@ -45,7 +45,7 @@ impl Timer {
 
         let delta_ticks =
             passed_seconds * (self.time_scale as f64) * (self.ticks_per_second as f64);
-        self.passed_time += (delta_ticks as JFloat);
+        self.passed_time += delta_ticks as JFloat;
 
         let mut ticks = self.passed_time.floor() as JInt;
         if ticks > MAX_TICKS_PER_UPDATE {

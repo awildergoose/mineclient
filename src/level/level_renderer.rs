@@ -189,39 +189,49 @@ impl LevelRenderer {
         mut y1: JInt,
         mut z1: JInt,
     ) {
-        x0 /= 16;
-        x1 /= 16;
-        y0 /= 16;
-        y1 /= 16;
-        z0 /= 16;
-        z1 /= 16;
+        fn floor_div(a: JInt, b: JInt) -> JInt {
+            let q = a / b;
+            let r = a % b;
+            if r != 0 && ((r > 0) != (b > 0)) {
+                q - 1
+            } else {
+                q
+            }
+        }
+        x0 = floor_div(x0, 16);
+        x1 = floor_div(x1, 16);
+        y0 = floor_div(y0, 16);
+        y1 = floor_div(y1, 16);
+        z0 = floor_div(z0, 16);
+        z1 = floor_div(z1, 16);
+
         if x0 < 0 {
-            x0 = 0;
+            x0 = 0
         }
-
         if y0 < 0 {
-            y0 = 0;
+            y0 = 0
         }
-
         if z0 < 0 {
-            z0 = 0;
+            z0 = 0
         }
 
         if x1 >= self.x_chunks {
-            x1 = self.x_chunks - 1;
+            x1 = self.x_chunks - 1
         }
-
         if y1 >= self.y_chunks {
-            y1 = self.y_chunks - 1;
+            y1 = self.y_chunks - 1
         }
-
         if z1 >= self.z_chunks {
-            z1 = self.z_chunks - 1;
+            z1 = self.z_chunks - 1
         }
 
-        for x in x0..x1 {
-            for y in y0..y1 {
-                for z in z0..z1 {
+        if x1 < x0 || y1 < y0 || z1 < z0 {
+            return;
+        }
+
+        for x in x0..=x1 {
+            for y in y0..=y1 {
+                for z in z0..=z1 {
                     self.chunks[((x + y * self.x_chunks) * self.z_chunks + z) as usize].set_dirty();
                 }
             }
@@ -229,6 +239,7 @@ impl LevelRenderer {
     }
 
     pub fn on_tile_changed(&mut self, x: JInt, y: JInt, z: JInt) {
+        println!("set dirty tile");
         self.set_dirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
     }
 
