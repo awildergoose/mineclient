@@ -1,0 +1,252 @@
+use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
+
+use crate::{
+    gl::{
+        self,
+        types::{GLdouble, GLenum, GLint, GLubyte},
+    },
+    hit_result::HitResult,
+    java::{
+        JFloat, JInt, get_milli_time, get_mouse_dx, get_mouse_dy, is_display_close_requested,
+        is_key_down, set_display_mode,
+    },
+    level::{chunk, level::Level, level_renderer::LevelRenderer, player::Player},
+    timer::Timer,
+};
+
+unsafe extern "C" {
+    pub fn gluErrorString(error: GLenum) -> *const GLubyte;
+    pub fn gluPerspective(fovy: GLdouble, aspect: GLdouble, zNear: GLdouble, zFar: GLdouble);
+    pub fn gluPickMatrix(
+        x: GLdouble,
+        y: GLdouble,
+        delX: GLdouble,
+        delY: GLdouble,
+        viewport: *mut GLint,
+    );
+}
+
+pub fn check_error() {
+    let e = unsafe { gl::GetError() };
+    if e != 0 {
+        panic!("{:?}", unsafe { gluErrorString(e) });
+    }
+}
+
+pub struct RubyDung {
+    width: JInt,
+    height: JInt,
+    fog_color: [f32; 4],
+    timer: Timer,
+    level: Option<Rc<RefCell<Level>>>,
+    level_renderer: Option<Rc<RefCell<LevelRenderer>>>,
+    player: Option<Player>,
+    viewport_buffer: [i32; 16],
+    select_buffer: [i32; 2000],
+    hit_result: Option<HitResult>,
+}
+
+impl RubyDung {
+    pub fn new() -> RubyDung {
+        Self {
+            width: 0,
+            height: 0,
+            fog_color: [0.0; 4],
+            timer: Timer::new(60.0),
+            level: None,
+            level_renderer: None,
+            player: None,
+            viewport_buffer: [0; 16],
+            select_buffer: [0; 2000],
+            hit_result: None,
+        }
+    }
+
+    pub fn init(&mut self) {
+        let col = 920330;
+        let fr = 0.5;
+        let fg = 0.8;
+        let fb = 1.0;
+        self.fog_color = [
+            ((col >> 16) & 0xFF) as f32 / 255.0,
+            ((col >> 8) & 0xFF) as f32 / 255.0,
+            (col & 0xFF) as f32 / 255.0,
+            1.0,
+        ];
+        set_display_mode(1024, 768);
+        self.width = 1024;
+        self.height = 768;
+        unsafe {
+            gl::Enable(3553);
+            gl::ShadeModel(7425);
+            gl::ClearColor(fr, fg, fb, 0.0);
+            gl::ClearDepth(1.0);
+            gl::Enable(2929);
+            gl::DepthFunc(515);
+            gl::MatrixMode(5889);
+            gl::LoadIdentity();
+            gl::MatrixMode(5888);
+        }
+
+        let level = Rc::new(RefCell::new(Level::new(256, 256, 64)));
+
+        self.level = Some(level.clone());
+        self.level_renderer = Some(LevelRenderer::new(level.clone()));
+        self.player = Some(Player::new(level.clone()));
+
+        // grab mouse
+    }
+
+    pub fn destroy(&mut self) {
+        self.level.as_ref().unwrap().borrow().save();
+    }
+
+    pub fn run(&mut self) {
+        self.init();
+
+        let mut last_time = get_milli_time();
+        let mut frames = 0;
+
+        while !is_key_down(glfw::Key::Escape) && is_display_close_requested() {
+            self.timer.advance_time();
+
+            for i in 0..self.timer.ticks {
+                self.tick();
+            }
+
+            self.render(self.timer.a);
+            frames += 1;
+
+            while get_milli_time() >= last_time + 1000 {
+                println!("{} fps, {}", frames, chunk::UPDATES.load(Ordering::SeqCst));
+                chunk::UPDATES.store(0, Ordering::SeqCst);
+                last_time += 1000;
+                frames = 0;
+            }
+        }
+
+        self.destroy();
+    }
+
+    pub fn tick(&mut self) {
+        self.player.as_mut().unwrap().tick();
+    }
+
+    fn move_camera_to_player(&mut self, a: JFloat) {
+        let player = self.player.as_ref().unwrap();
+
+        unsafe {
+            gl::Translatef(0.0, 0.0, -0.3);
+            gl::Rotatef(player.x_rot, 1.0, 0.0, 0.0);
+            gl::Rotatef(player.y_rot, 0.0, 1.0, 0.0);
+        }
+
+        let x = player.xo + (player.x - player.xo) * a;
+        let y = player.yo + (player.y - player.yo) * a;
+        let z = player.zo + (player.z - player.zo) * a;
+
+        unsafe {
+            gl::Translatef(-x, -y, -z);
+        }
+    }
+
+    fn setup_camera(&mut self, a: JFloat) {
+        unsafe {
+            gl::MatrixMode(5889);
+            gl::LoadIdentity();
+            gluPerspective(70.0, (self.width / self.height) as f64, 0.05, 1000.0);
+            gl::MatrixMode(5888);
+            gl::LoadIdentity();
+        }
+        self.move_camera_to_player(a);
+    }
+
+    fn setup_pick_camera(&mut self, a: JFloat, x: JFloat, y: JFloat) {
+        unsafe {
+            gl::MatrixMode(5889);
+            gl::LoadIdentity();
+        }
+        self.viewport_buffer = [0; 16];
+        unsafe {
+            gl::GetIntegerv(2978, self.viewport_buffer.as_mut_ptr());
+        }
+        // does viewport_buffer.limit(16) translate to anything
+        unsafe {
+            gluPickMatrix(
+                x as f64,
+                y as f64,
+                5.0,
+                5.0,
+                self.viewport_buffer.as_mut_ptr(),
+            );
+            gluPerspective(70.0, (self.width / self.height) as f64, 0.05, 1000.0);
+            gl::MatrixMode(5888);
+            gl::LoadIdentity();
+        };
+        self.move_camera_to_player(a);
+    }
+
+    fn pick(&mut self, a: JFloat) {
+        self.select_buffer = [0; 2000];
+        unsafe {
+            gl::SelectBuffer(
+                self.select_buffer.len() as i32,
+                self.select_buffer.as_mut_ptr() as *mut _,
+            );
+            gl::RenderMode(7170);
+        }
+        self.setup_pick_camera(a, (self.width / 2) as f32, (self.height / 2) as f32);
+        self.level_renderer
+            .as_mut()
+            .unwrap()
+            .borrow_mut()
+            .pick(self.player.as_ref().unwrap());
+        let hits = unsafe { gl::RenderMode(7168) };
+        // limit select_buffer?
+        let mut closest = 0;
+        let mut names = [0; 10];
+        let mut hit_name_count = 0;
+        let mut index = 0;
+
+        for _i in 0..hits {
+            let name_count = self.select_buffer[index];
+            index += 1;
+
+            let min_z = self.select_buffer[index];
+            index += 1;
+
+            index += 1; // skip maxZ
+
+            if min_z >= closest && _i != 0 {
+                index += name_count as usize;
+            } else {
+                closest = min_z;
+                hit_name_count = name_count;
+
+                for j in 0..name_count as usize {
+                    names[j] = self.select_buffer[index];
+                    index += 1;
+                }
+            }
+        }
+
+        if hit_name_count > 0 {
+            self.hit_result = Some(HitResult::new(
+                names[0], names[1], names[2], names[3], names[4],
+            ));
+        } else {
+            self.hit_result = None;
+        }
+    }
+
+    pub fn render(&mut self, a: JFloat) {
+        let xo = get_mouse_dx();
+        let yo = get_mouse_dy();
+    }
+}
+
+impl Default for RubyDung {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -35,3 +35,19 @@ pub fn is_key_down(key: Key) -> bool {
     let set = PRESSED_KEYS.lock().unwrap();
     set.contains(&key)
 }
+
+// LWJGL
+
+pub fn set_display_mode(width: JInt, height: JInt) {}
+pub fn grab_mouse() {}
+pub fn is_display_close_requested() -> JBoolean {
+    false
+}
+
+pub fn get_mouse_dx() -> JFloat {
+    0.0
+}
+
+pub fn get_mouse_dy() -> JFloat {
+    0.0
+}

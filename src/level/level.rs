@@ -55,6 +55,10 @@ impl Level {
         // TODO stub
     }
 
+    pub fn save(&self) {
+        // TODO stub
+    }
+
     pub fn add_listener(&mut self, level_listener: Box<dyn LevelListener>) {
         self.level_listeners.push(level_listener);
     }

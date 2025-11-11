@@ -101,7 +101,7 @@ impl LevelRenderer {
         }
     }
 
-    pub fn pick(&mut self, player: Player) {
+    pub fn pick(&mut self, player: &Player) {
         let r = 3.0;
         let pbox = player.bb.grow(r, r, r);
         let x0 = pbox.x0 as JInt;

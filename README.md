@@ -4,15 +4,18 @@
 -   level/Frustum
 -   level/LevelListener
 -   level/LevelRenderer
--   level/Level
 -   level/Player
 -   level/Tesselator
 -   level/Tile
 -   phys/AABB
 -   Timer
 -   HitResult
+-   Textures
 
 # unfinished
 
--   main
--   textures
+-   RubyDung
+
+# partial
+
+-   level/Level (missing light, load, save)
