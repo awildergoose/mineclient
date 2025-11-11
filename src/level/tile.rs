@@ -128,7 +128,7 @@ impl Tile {
         }
     }
 
-    pub fn render_face(&self, mut t: Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
+    pub fn render_face(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let x0 = x as f32 + 0.0;
         let x1 = x as f32 + 1.0;
         let y0 = y as f32 + 0.0;

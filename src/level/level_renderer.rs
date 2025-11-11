@@ -5,12 +5,16 @@ use std::{
 };
 
 use crate::{
+    gl,
     java::JInt,
     level::{
         chunk::{self, Chunk},
+        frustum,
         level::Level,
         level_listener::LevelListener,
+        player::Player,
         tesselator::Tesselator,
+        tile::Tile,
     },
 };
 
@@ -85,10 +89,80 @@ impl LevelRenderer {
         renderer
     }
 
-    // pub fn render(&mut self, player: Player, layer: JInt) {
-    //     chunk::REBUILT_THIS_FRAME.store(0, Ordering::SeqCst);
-    //     // TODO
-    // }
+    pub fn render(&mut self, _player: Player, layer: u32) {
+        chunk::REBUILT_THIS_FRAME.store(0, Ordering::SeqCst);
+        let frustum = frustum::get_frustum();
+
+        for c in &mut self.chunks {
+            if frustum.lock().unwrap().aabb_in_frustum(&c.aabb) {
+                c.render(layer);
+            }
+        }
+    }
+
+    pub fn pick(&mut self, player: Player) {
+        let r = 3.0;
+        let pbox = player.bb.grow(r, r, r);
+        let x0 = pbox.x0 as JInt;
+        let x1 = pbox.x1 as JInt;
+        let y0 = pbox.y0 as JInt;
+        let y1 = pbox.y1 as JInt;
+        let z0 = pbox.z0 as JInt;
+        let z1 = pbox.z1 as JInt;
+        unsafe { gl::InitNames() };
+
+        for x in x0..x1 {
+            unsafe {
+                gl::PushName(x as u32);
+            }
+
+            for y in y0..y1 {
+                unsafe {
+                    gl::PushName(y as u32);
+                }
+
+                for z in z0..z1 {
+                    unsafe {
+                        gl::PushName(z as u32);
+                    }
+
+                    if self.level.borrow().is_solid_tile(x, y, z) {
+                        unsafe {
+                            gl::PushName(0);
+                        }
+
+                        for i in 0..6 {
+                            unsafe {
+                                gl::PushName(i as u32);
+                            }
+                            self.t.init();
+                            Tile::ROCK.render_face(&mut self.t, x, y, z, i);
+                            self.t.flush();
+                            unsafe {
+                                gl::PopName();
+                            }
+                        }
+
+                        unsafe {
+                            gl::PopName();
+                        }
+                    }
+
+                    unsafe {
+                        gl::PopName();
+                    }
+                }
+
+                unsafe {
+                    gl::PopName();
+                }
+            }
+
+            unsafe {
+                gl::PopName();
+            }
+        }
+    }
 
     pub fn on_tile_changed(&self, a: JInt, b: JInt, c: JInt) {
         // TODO: actual logic; e.g. mark chunks dirty, etc.
