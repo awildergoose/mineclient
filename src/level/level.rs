@@ -94,16 +94,13 @@ impl Level {
 
     pub fn is_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
         if x >= 0 && y >= 0 && z >= 0 {
-            let x = x as usize;
-            let y = y as usize;
-            let z = z as usize;
-            let width = self.width as usize;
-            let height = self.height as usize;
-            let depth = self.depth as usize;
+            let width = self.width;
+            let height = self.height;
+            let depth = self.depth;
 
             if x < width && y < depth && z < height {
                 let idx = (y * height + z) * width + x;
-                return self.blocks[idx] == 1;
+                return self.blocks[idx as usize] == 1;
             }
         }
         false
@@ -177,11 +174,9 @@ impl Level {
         if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
             light
         } else {
-            let x = x as usize;
-            let z = z as usize;
-            let width = self.width as usize;
+            let width = self.width;
 
-            if y < self.light_depths[x + z * width] {
+            if y < self.light_depths[(x + z * width) as usize] {
                 dark
             } else {
                 light
@@ -191,16 +186,13 @@ impl Level {
 
     pub fn set_tile(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            let x = x as usize;
-            let y = y as usize;
-            let z = z as usize;
-            let width = self.width as usize;
-            let height = self.height as usize;
+            let width = self.width;
+            let height = self.height;
 
-            self.blocks[(y * height + z) * width + x] = type_ as JByte;
+            self.blocks[((y * height + z) * width + x) as usize] = type_ as JByte;
 
             for ele in &self.level_listeners {
-                ele.tile_changed(x as i32, y as i32, z as i32);
+                ele.tile_changed(x, y, z);
             }
         }
     }

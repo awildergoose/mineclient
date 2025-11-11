@@ -48,6 +48,7 @@ impl Frustum {
     }
 
     fn normalize_plane(frustum: &mut [[f32; 4]; 6], side: JInt) {
+        // TODO check if this is ok
         let side = side as usize;
         let magnitude = f32::sqrt(
             frustum[side][0] * frustum[side][0]

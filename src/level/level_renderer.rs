@@ -198,6 +198,7 @@ impl LevelRenderer {
                 q
             }
         }
+
         x0 = floor_div(x0, 16);
         x1 = floor_div(x1, 16);
         y0 = floor_div(y0, 16);
