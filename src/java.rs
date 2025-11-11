@@ -19,11 +19,16 @@ pub type JChar = char;
 pub type JBoolean = bool;
 
 pub fn get_nano_time() -> JLong {
-    Instant::now().elapsed().as_nanos() as JLong
+    let ns = START_INSTANT.elapsed().as_nanos();
+    if ns <= i64::MAX as u128 {
+        ns as i64
+    } else {
+        (ns % (i64::MAX as u128 + 1)) as i64
+    }
 }
 
 pub fn get_milli_time() -> JLong {
-    Instant::now().elapsed().as_millis() as JLong
+    START_INSTANT.elapsed().as_micros() as i64 / 1000
 }
 
 pub fn math_random() -> JFloat {

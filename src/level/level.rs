@@ -46,9 +46,28 @@ impl Level {
         this
     }
 
-    #[allow(unused_variables)]
     pub fn calc_light_depths(&mut self, x0: JInt, y0: JInt, x1: JInt, y1: JInt) {
-        // TODO stub
+        for x in x0..x0 + x1 {
+            for z in y0..y0 + y1 {
+                let old_depth = self.light_depths[(x + z * self.width) as usize];
+                let mut y = self.depth - 1;
+
+                while y > 0 && !self.is_light_blocker(x, y, z) {
+                    y -= 1;
+                }
+
+                self.light_depths[(x + z * self.width) as usize] = y;
+
+                if old_depth != y {
+                    let yl0 = if old_depth < y { old_depth } else { y };
+                    let yl1 = if old_depth > y { old_depth } else { y };
+
+                    for l in &self.level_listeners {
+                        l.light_column_changed(x, z, yl0, yl1);
+                    }
+                }
+            }
+        }
     }
 
     pub fn load(&mut self) {

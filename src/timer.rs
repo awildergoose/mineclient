@@ -31,19 +31,33 @@ impl Timer {
         let now = get_nano_time();
         let mut passed_ns = now - self.last_time;
         self.last_time = now;
-        passed_ns = passed_ns.clamp(1, 1000000000);
 
-        self.fps = (1000000000 / passed_ns) as JFloat;
-        self.passed_time = (self.passed_time as JLong
-            + passed_ns * self.time_scale as JLong * self.ticks_per_second as JLong)
-            as JFloat
-            / 1.0E9;
-        self.ticks = self.passed_time as i32;
-        if self.ticks > 100 {
-            self.ticks = 100;
+        if passed_ns < 1 {
+            passed_ns = 1;
+        }
+        if passed_ns > NS_PER_SECOND {
+            passed_ns = NS_PER_SECOND;
         }
 
+        let passed_seconds = (passed_ns as f64) / (NS_PER_SECOND as f64);
+
+        self.fps = (1.0 / passed_seconds) as JFloat;
+
+        let delta_ticks =
+            passed_seconds * (self.time_scale as f64) * (self.ticks_per_second as f64);
+        self.passed_time += (delta_ticks as JFloat);
+
+        let mut ticks = self.passed_time.floor() as JInt;
+        if ticks > MAX_TICKS_PER_UPDATE {
+            ticks = MAX_TICKS_PER_UPDATE;
+        }
+        if ticks < 0 {
+            ticks = 0;
+        }
+        self.ticks = ticks;
+
         self.passed_time -= self.ticks as JFloat;
+
         self.a = self.passed_time;
     }
 }
