@@ -2,7 +2,7 @@ use std::{
     cell::RefCell,
     rc::Rc,
     sync::{
-        Mutex,
+        Mutex, OnceLock,
         atomic::{AtomicI32, Ordering},
     },
 };
@@ -14,7 +14,7 @@ use crate::{
     phys::aabb::AABB,
 };
 
-pub static CHUNK_TEXTURE: Mutex<u32> = Mutex::new(0);
+pub static CHUNK_TEXTURE: OnceLock<Mutex<u32>> = OnceLock::new();
 pub static REBUILT_THIS_FRAME: AtomicI32 = AtomicI32::new(0);
 pub static UPDATES: AtomicI32 = AtomicI32::new(0);
 
@@ -72,7 +72,7 @@ impl Chunk {
             unsafe {
                 gl::NewList(self.lists + layer, 4864);
                 gl::Enable(3553);
-                gl::BindTexture(3553, *CHUNK_TEXTURE.lock().unwrap());
+                gl::BindTexture(3553, *CHUNK_TEXTURE.get().unwrap().lock().unwrap());
             }
             self.t.init();
 

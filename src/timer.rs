@@ -31,7 +31,7 @@ impl Timer {
         let now = get_nano_time();
         let mut passed_ns = now - self.last_time;
         self.last_time = now;
-        passed_ns = passed_ns.clamp(0, 1000000000);
+        passed_ns = passed_ns.clamp(1, 1000000000);
 
         self.fps = (1000000000 / passed_ns) as JFloat;
         self.passed_time = (self.passed_time as JLong

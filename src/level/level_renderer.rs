@@ -37,7 +37,7 @@ impl LevelRenderer {
         let x_chunks = level.borrow().width / 16;
         let y_chunks = level.borrow().depth / 16;
         let z_chunks = level.borrow().height / 16;
-        let mut chunks = Vec::with_capacity((x_chunks * y_chunks * z_chunks) as usize);
+        let mut chunks = Vec::new();
 
         let width = level.borrow().width;
         let height = level.borrow().height;
@@ -63,11 +63,7 @@ impl LevelRenderer {
                         z1 = height;
                     }
 
-                    let idx = (x as usize + (y as usize) * (x_chunks as usize))
-                        * (z_chunks as usize)
-                        + (z as usize);
-
-                    chunks[idx] = Chunk::new(level.clone(), x0, y0, z0, x1, y1, z1);
+                    chunks.push(Chunk::new(level.clone(), x0, y0, z0, x1, y1, z1));
                 }
             }
         }

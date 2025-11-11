@@ -1,4 +1,8 @@
-use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    sync::{Mutex, atomic::Ordering},
+};
 
 use crate::{
     gl::{
@@ -7,10 +11,12 @@ use crate::{
     },
     hit_result::HitResult,
     java::{
-        JFloat, JInt, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse, init_display,
-        is_display_close_requested, is_key_down, is_mouse_button_down, update_display,
+        JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse,
+        init_display, is_display_close_requested, is_key_down, is_mouse_button_down,
+        update_display,
     },
     level::{chunk, level::Level, level_renderer::LevelRenderer, player::Player},
+    textures,
     timer::Timer,
 };
 
@@ -74,6 +80,27 @@ impl RubyDung {
             1.0,
         ];
         init_display(1024, 768);
+
+        gl::load_with(|s| {
+            WINDOW_CTX.with(|ctx_cell| {
+                ctx_cell
+                    .borrow_mut()
+                    .as_mut()
+                    .unwrap()
+                    .window
+                    .get_proc_address(s)
+                    .unwrap() as *const _
+            })
+        });
+
+        let tex_id = textures::get_textures()
+            .lock()
+            .unwrap()
+            .load_texture("terrain.png", 9728);
+
+        let chunk_mutex = chunk::CHUNK_TEXTURE.get_or_init(|| Mutex::new(0));
+        *chunk_mutex.lock().unwrap() = tex_id;
+
         self.width = 1024;
         self.height = 768;
         unsafe {
@@ -107,10 +134,10 @@ impl RubyDung {
         let mut last_time = get_milli_time();
         let mut frames = 0;
 
-        while !is_key_down(glfw::Key::Escape) && is_display_close_requested() {
+        while is_key_down(glfw::Key::Escape) && !is_display_close_requested() {
             self.timer.advance_time();
 
-            for i in 0..self.timer.ticks {
+            for _ in 0..self.timer.ticks {
                 self.tick();
             }
 
@@ -223,6 +250,7 @@ impl RubyDung {
                 closest = min_z;
                 hit_name_count = name_count;
 
+                #[allow(clippy::needless_range_loop)]
                 for j in 0..name_count as usize {
                     names[j] = self.select_buffer[index];
                     index += 1;

@@ -11,9 +11,6 @@
 -   Timer
 -   HitResult
 -   Textures
-
-# unfinished
-
 -   RubyDung
 
 # partial

@@ -22,9 +22,9 @@ pub struct Tesselator {
 impl Tesselator {
     pub fn new() -> Self {
         Self {
-            vertex_buffer: Vec::with_capacity(300000),
-            tex_coord_buffer: Vec::with_capacity(200000),
-            color_buffer: Vec::with_capacity(300000),
+            vertex_buffer: vec![0.0; 300000],
+            tex_coord_buffer: vec![0.0; 200000],
+            color_buffer: vec![0.0; 300000],
             vertices: 0,
             u: 0.0,
             v: 0.0,
@@ -72,9 +72,6 @@ impl Tesselator {
 
     pub fn clear(&mut self) {
         self.vertices = 0;
-        self.vertex_buffer.clear();
-        self.tex_coord_buffer.clear();
-        self.color_buffer.clear();
     }
 
     pub fn init(&mut self) {
