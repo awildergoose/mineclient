@@ -29,7 +29,7 @@ pub struct LevelRenderer {
     x_chunks: JInt,
     y_chunks: JInt,
     z_chunks: JInt,
-    t: Tesselator,
+    t: Rc<RefCell<Tesselator>>,
 }
 
 impl LevelRenderer {
@@ -42,6 +42,8 @@ impl LevelRenderer {
         let y_chunks = depth / 16;
         let z_chunks = height / 16;
         let mut chunks = Vec::new();
+
+        let t = Rc::new(RefCell::new(Tesselator::new()));
 
         for x in 0..x_chunks {
             for y in 0..y_chunks {
@@ -63,7 +65,7 @@ impl LevelRenderer {
                         z1 = height;
                     }
 
-                    chunks.push(Chunk::new(level.clone(), x0, y0, z0, x1, y1, z1));
+                    chunks.push(Chunk::new(level.clone(), t.clone(), x0, y0, z0, x1, y1, z1));
                 }
             }
         }
@@ -74,7 +76,7 @@ impl LevelRenderer {
             x_chunks,
             y_chunks,
             z_chunks,
-            t: Tesselator::new(),
+            t: t.clone(),
         }));
 
         let adapter = LevelRendererListener {
@@ -98,6 +100,7 @@ impl LevelRenderer {
     }
 
     pub fn pick(&mut self, player: &Player) {
+        let mut t = self.t.borrow_mut();
         let r = 3.0;
         let pbox = player.bb.grow(r, r, r);
         let x0 = pbox.x0 as JInt;
@@ -132,9 +135,9 @@ impl LevelRenderer {
                             unsafe {
                                 gl::PushName(i as u32);
                             }
-                            self.t.init();
-                            Tile::ROCK.render_face(&mut self.t, x, y, z, i);
-                            self.t.flush();
+                            t.init();
+                            Tile::ROCK.render_face(&mut t, x, y, z, i);
+                            t.flush();
                             unsafe {
                                 gl::PopName();
                             }
@@ -172,9 +175,10 @@ impl LevelRenderer {
                 f32::sin(get_milli_time() as JFloat / 100.0) * 0.2 + 0.4,
             );
         }
-        self.t.init();
-        Tile::ROCK.render_face(&mut self.t, h.x, h.y, h.z, h.f);
-        self.t.flush();
+        let mut t = self.t.borrow_mut();
+        t.init();
+        Tile::ROCK.render_face(&mut t, h.x, h.y, h.z, h.f);
+        t.flush();
         unsafe {
             gl::Disable(3042);
         }

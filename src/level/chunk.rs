@@ -29,12 +29,14 @@ pub struct Chunk {
     pub z1: JInt,
     dirty: JBoolean,
     lists: u32,
-    t: Tesselator,
+    t: Rc<RefCell<Tesselator>>,
 }
 
 impl Chunk {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         level: Rc<RefCell<Level>>,
+        t: Rc<RefCell<Tesselator>>,
         x0: JInt,
         y0: JInt,
         z0: JInt,
@@ -52,6 +54,7 @@ impl Chunk {
                 z1 as JFloat,
             ),
             level,
+            t,
             x0,
             y0,
             z0,
@@ -60,7 +63,6 @@ impl Chunk {
             z1,
             dirty: true,
             lists: unsafe { gl::GenLists(2) },
-            t: Tesselator::new(),
         }
     }
 
@@ -74,7 +76,8 @@ impl Chunk {
                 gl::Enable(3553);
                 gl::BindTexture(3553, *CHUNK_TEXTURE.get().unwrap().lock().unwrap());
             }
-            self.t.init();
+            let mut t = self.t.borrow_mut();
+            t.init();
 
             for x in self.x0..self.x1 {
                 for y in self.y0..self.y1 {
@@ -88,7 +91,7 @@ impl Chunk {
 
                             if tex == 0 {
                                 Tile::ROCK.render(
-                                    &mut self.t,
+                                    &mut t,
                                     &self.level.borrow(),
                                     layer as i32,
                                     x,
@@ -97,7 +100,7 @@ impl Chunk {
                                 );
                             } else {
                                 Tile::GRASS.render(
-                                    &mut self.t,
+                                    &mut t,
                                     &self.level.borrow(),
                                     layer as i32,
                                     x,
@@ -110,7 +113,7 @@ impl Chunk {
                 }
             }
 
-            self.t.flush();
+            t.flush();
 
             unsafe {
                 gl::Disable(3553);
