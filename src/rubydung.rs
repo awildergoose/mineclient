@@ -134,7 +134,7 @@ impl RubyDung {
         let mut last_time = get_milli_time();
         let mut frames = 0;
 
-        while is_key_down(glfw::Key::Escape) && !is_display_close_requested() {
+        while !is_key_down(glfw::Key::Escape) && !is_display_close_requested() {
             self.timer.advance_time();
 
             for _ in 0..self.timer.ticks {
