@@ -90,11 +90,11 @@ impl Player {
         }
 
         if is_key_down(glfw::Key::Left) || is_key_down(glfw::Key::A) {
-            xa += 1.0;
+            xa -= 1.0;
         }
 
         if is_key_down(glfw::Key::Right) || is_key_down(glfw::Key::D) {
-            xa -= 1.0;
+            xa += 1.0;
         }
 
         if (is_key_down(glfw::Key::Space) || is_key_down(glfw::Key::LeftSuper)) && self.on_ground {

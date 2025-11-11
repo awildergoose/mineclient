@@ -207,7 +207,7 @@ impl RubyDung {
                 5.0,
                 self.viewport_buffer.as_mut_ptr(),
             );
-            gluPerspective(70.0, (self.width / self.height) as f64, 0.05, 1000.0);
+            gluPerspective(70.0, self.width as f64 / self.height as f64, 0.05, 1000.0);
             gl::MatrixMode(5888);
             gl::LoadIdentity();
         };
@@ -236,7 +236,7 @@ impl RubyDung {
         let mut hit_name_count = 0;
         let mut index = 0;
 
-        for _i in 0..hits {
+        for i in 0..hits {
             let name_count = self.select_buffer[index];
             index += 1;
 
@@ -245,7 +245,7 @@ impl RubyDung {
 
             index += 1; // skip maxZ
 
-            if min_z >= closest && _i != 0 {
+            if min_z >= closest && i != 0 {
                 index += name_count as usize;
             } else {
                 closest = min_z;
