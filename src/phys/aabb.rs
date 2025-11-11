@@ -67,7 +67,7 @@ impl AABB {
         Self::new(_x0, _y0, _z0, _x1, _y1, _z1)
     }
 
-    pub fn clip_x_collide(&self, c: AABB, mut xa: JFloat) -> JFloat {
+    pub fn clip_x_collide(&self, c: &AABB, mut xa: JFloat) -> JFloat {
         if c.y1 <= self.y0 || c.y0 >= self.y1 {
             xa
         } else if c.z1 > self.z0 && c.z0 < self.z1 {
@@ -91,7 +91,7 @@ impl AABB {
         }
     }
 
-    pub fn clip_y_collide(&self, c: AABB, mut ya: JFloat) -> JFloat {
+    pub fn clip_y_collide(&self, c: &AABB, mut ya: JFloat) -> JFloat {
         if c.x1 <= self.x0 || c.x0 >= self.x1 {
             ya
         } else if !(c.z1 <= self.z0) && !(c.z0 >= self.z1) {
@@ -115,7 +115,7 @@ impl AABB {
         }
     }
 
-    pub fn clip_z_collide(&self, c: AABB, mut za: JFloat) -> JFloat {
+    pub fn clip_z_collide(&self, c: &AABB, mut za: JFloat) -> JFloat {
         if c.x1 <= self.x0 || c.x0 >= self.x1 {
             za
         } else if !(c.y1 <= self.y0) && !(c.y0 >= self.y1) {
