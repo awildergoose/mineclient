@@ -71,12 +71,12 @@ impl Textures {
             );
 
             gluBuild2DMipmaps(
-                3553,
-                6408,
+                gl::TEXTURE_2D,
+                gl::RGBA as i32,
                 w as i32,
                 h as i32,
-                6408,
-                5121,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
                 pixels.as_ptr() as *const _,
             );
         }

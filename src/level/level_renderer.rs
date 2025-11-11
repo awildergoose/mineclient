@@ -233,7 +233,8 @@ impl LevelRenderer {
         for x in x0..=x1 {
             for y in y0..=y1 {
                 for z in z0..=z1 {
-                    self.chunks[((x + y * self.x_chunks) * self.z_chunks + z) as usize].set_dirty();
+                    let idx = ((x * self.y_chunks + y) * self.z_chunks + z) as usize;
+                    self.chunks[idx].set_dirty();
                 }
             }
         }
