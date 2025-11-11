@@ -11,13 +11,31 @@ env:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+
+        runs-on: ${{ matrix.os }}
 
         steps:
             - uses: actions/checkout@v4
+
+            - name: Install Linux Dependencies (GLFW)
+              if: matrix.os == 'ubuntu-latest'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y pkg-config libglfw3-dev
 
             - name: Build
               run: cargo build --release --verbose
 
             - name: Run tests
               run: cargo test --release --verbose
+
+            - name: Upload Release Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: mineclient-build-${{ matrix.os }}
+                  path: |
+                      ${{ startsWith(matrix.os, 'ubuntu') && 'target/release/mineclient' || '' }}
+                      ${{ startsWith(matrix.os, 'windows') && 'target/release/mineclient.exe' || '' }}
