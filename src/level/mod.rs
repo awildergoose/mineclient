@@ -1,4 +1,5 @@
 pub mod chunk;
+pub mod frustum;
 pub mod level;
 pub mod level_listener;
 pub mod level_renderer;
