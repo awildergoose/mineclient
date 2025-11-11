@@ -199,9 +199,6 @@ impl RubyDung {
         self.viewport_buffer = [0; 16];
         unsafe {
             gl::GetIntegerv(2978, self.viewport_buffer.as_mut_ptr());
-        }
-        // does viewport_buffer.limit(16) translate to anything
-        unsafe {
             gluPickMatrix(
                 x as f64,
                 y as f64,
@@ -232,7 +229,6 @@ impl RubyDung {
             .borrow_mut()
             .pick(self.player.as_ref().unwrap());
         let hits = unsafe { gl::RenderMode(7168) };
-        // limit select_buffer?
         let mut closest = 0;
         let mut names = [0; 10];
         let mut hit_name_count = 0;
@@ -245,7 +241,7 @@ impl RubyDung {
             let min_z = self.select_buffer[index];
             index += 1;
 
-            index += 1; // skip maxZ
+            index += 1;
 
             if min_z >= closest && i != 0 {
                 index += name_count as usize;
