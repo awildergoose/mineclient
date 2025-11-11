@@ -76,7 +76,7 @@ pub fn get_mouse_dy() -> JFloat {
     let mut pos = MOUSE_POS.lock().unwrap();
     let dy = pos.1 - pos.3;
     pos.3 = pos.1;
-    dy as JFloat
+    -dy as JFloat
 }
 
 pub fn handle_key_event(key: Key, pressed: bool) {
