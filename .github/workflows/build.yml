@@ -33,7 +33,9 @@ jobs:
                     libxcursor-dev \
                     libxrandr-dev \
                     libxinerama-dev \
-                    libxi-dev
+                    libxi-dev \
+                    libgl1-mesa-dev \
+                    libglu1-mesa-dev
 
             - name: Build
               run: cargo build --release --verbose
