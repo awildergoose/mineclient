@@ -36,8 +36,6 @@ jobs:
                     libxi-dev
 
             - name: Build
-              env:
-                  GLFWS_BUILD_FROM_SOURCE: ${{ matrix.os == 'ubuntu-latest' }}
               run: cargo build --release --verbose
 
             - name: Upload artifact

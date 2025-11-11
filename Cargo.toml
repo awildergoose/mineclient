@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 flate2 = "1.1.5"
-glfw = { version = "0.60.0", features = ["static-link"] }
+glfw = { version = "0.60.0", features = ["static-link", "src-build"] }
 glutin = "0.32.3"
 image = "0.25.8"
 lazy_static = "1.5.0"
