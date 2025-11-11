@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+flate2 = "1.1.5"
 glfw = "0.60.0"
 glutin = "0.32.3"
 image = "0.25.8"

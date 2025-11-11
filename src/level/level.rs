@@ -1,3 +1,8 @@
+use std::{fs::File, io::Read};
+
+use flate2::{Compression, read::GzDecoder, write::GzEncoder};
+use std::io::Write;
+
 use crate::{
     java::{JBoolean, JByte, JFloat, JInt},
     level::level_listener::LevelListener,
@@ -41,7 +46,9 @@ impl Level {
         };
 
         this.calc_light_depths(0, 0, w as JInt, h as JInt);
-        this.load();
+        if let Err(err) = this.load() {
+            eprintln!("failed to load level: {:?}", err);
+        }
 
         this
     }
@@ -70,12 +77,38 @@ impl Level {
         }
     }
 
-    pub fn load(&mut self) {
-        // TODO stub
+    pub fn load(&mut self) -> Result<(), std::io::Error> {
+        let file = File::open("level.dat")?;
+        let mut decoder = GzDecoder::new(file);
+
+        let i8_slice: &mut [i8] = self.blocks.as_mut_slice();
+        let u8_slice: &mut [u8] = unsafe {
+            std::slice::from_raw_parts_mut(i8_slice.as_mut_ptr() as *mut u8, i8_slice.len())
+        };
+
+        decoder.read_exact(u8_slice)?;
+
+        self.calc_light_depths(0, 0, self.width, self.height);
+
+        for listener in &self.level_listeners {
+            listener.all_changed();
+        }
+
+        Ok(())
     }
 
-    pub fn save(&self) {
-        // TODO stub
+    pub fn save(&self) -> Result<(), std::io::Error> {
+        let file = File::create("level.dat")?;
+        let mut encoder = GzEncoder::new(file, Compression::default());
+
+        let i8_slice: &[i8] = self.blocks.as_slice();
+        let u8_slice: &[u8] =
+            unsafe { std::slice::from_raw_parts(i8_slice.as_ptr() as *const u8, i8_slice.len()) };
+
+        encoder.write_all(u8_slice)?;
+        encoder.finish()?;
+
+        Ok(())
     }
 
     pub fn add_listener(&mut self, level_listener: Box<dyn LevelListener>) {

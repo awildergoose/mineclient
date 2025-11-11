@@ -126,7 +126,9 @@ impl RubyDung {
     }
 
     pub fn destroy(&mut self) {
-        self.level.as_ref().unwrap().borrow().save();
+        if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
+            eprintln!("failed to save level: {:?}", err);
+        }
     }
 
     pub fn run(&mut self) {
@@ -322,9 +324,10 @@ impl RubyDung {
                 .set_tile(x, y, z, 1);
         }
 
-        // TODO check if Return = Backspace?
-        if is_key_down(glfw::Key::Backspace) {
-            self.level.as_ref().unwrap().borrow().save();
+        if is_key_down(glfw::Key::Enter)
+            && let Err(err) = self.level.as_ref().unwrap().borrow().save()
+        {
+            eprintln!("failed to save level: {:?}", err);
         }
 
         unsafe {
