@@ -6,7 +6,8 @@ use std::{
 
 use crate::{
     gl,
-    java::JInt,
+    hit_result::HitResult,
+    java::{JFloat, JInt, get_milli_time},
     level::{
         chunk::{self, Chunk},
         frustum,
@@ -164,16 +165,88 @@ impl LevelRenderer {
         }
     }
 
-    pub fn on_tile_changed(&self, a: JInt, b: JInt, c: JInt) {
-        // TODO: actual logic; e.g. mark chunks dirty, etc.
+    pub fn render_hit(&mut self, h: HitResult) {
+        unsafe {
+            gl::Enable(3042);
+            gl::BlendFunc(770, 1);
+            gl::Color4f(
+                1.0,
+                1.0,
+                1.0,
+                f32::sin(get_milli_time() as JFloat / 100.0) * 0.2 + 0.4,
+            );
+        }
+        self.t.init();
+        Tile::ROCK.render_face(&mut self.t, h.x, h.y, h.z, h.f);
+        self.t.flush();
+        unsafe {
+            gl::Disable(3042);
+        }
     }
 
-    pub fn on_light_column_changed(&self, a: JInt, b: JInt, c: JInt, d: JInt) {
-        // TODO
+    pub fn set_dirty(
+        &mut self,
+        mut x0: JInt,
+        mut y0: JInt,
+        mut z0: JInt,
+        mut x1: JInt,
+        mut y1: JInt,
+        mut z1: JInt,
+    ) {
+        x0 /= 16;
+        x1 /= 16;
+        y0 /= 16;
+        y1 /= 16;
+        z0 /= 16;
+        z1 /= 16;
+        if x0 < 0 {
+            x0 = 0;
+        }
+
+        if y0 < 0 {
+            y0 = 0;
+        }
+
+        if z0 < 0 {
+            z0 = 0;
+        }
+
+        if x1 >= self.x_chunks {
+            x1 = self.x_chunks - 1;
+        }
+
+        if y1 >= self.y_chunks {
+            y1 = self.y_chunks - 1;
+        }
+
+        if z1 >= self.z_chunks {
+            z1 = self.z_chunks - 1;
+        }
+
+        for x in x0..x1 {
+            for y in y0..y1 {
+                for z in z0..z1 {
+                    self.chunks[((x + y * self.x_chunks) * self.z_chunks + z) as usize].set_dirty();
+                }
+            }
+        }
     }
 
-    pub fn on_all_changed(&self) {
-        // TODO
+    pub fn on_tile_changed(&mut self, x: JInt, y: JInt, z: JInt) {
+        self.set_dirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
+    }
+
+    pub fn on_light_column_changed(&mut self, x: JInt, z: JInt, y0: JInt, y1: JInt) {
+        self.set_dirty(x - 1, y0 - 1, z - 1, x + 1, y1 + 1, z + 1);
+    }
+
+    pub fn on_all_changed(&mut self) {
+        let (w, d, h) = {
+            let level = self.level.borrow();
+            (level.width, level.depth, level.height)
+        };
+
+        self.set_dirty(0, 0, 0, w, d, h);
     }
 }
 
@@ -182,21 +255,21 @@ struct LevelRendererListener {
 }
 
 impl LevelListener for LevelRendererListener {
-    fn tile_changed(&self, a: JInt, b: JInt, c: JInt) {
+    fn tile_changed(&self, x: JInt, y: JInt, z: JInt) {
         if let Some(rc) = self.renderer.upgrade() {
-            rc.borrow().on_tile_changed(a, b, c);
+            rc.borrow_mut().on_tile_changed(x, y, z);
         }
     }
 
-    fn light_column_changed(&self, a: JInt, b: JInt, c: JInt, d: JInt) {
+    fn light_column_changed(&self, x: JInt, z: JInt, y0: JInt, y1: JInt) {
         if let Some(rc) = self.renderer.upgrade() {
-            rc.borrow().on_light_column_changed(a, b, c, d);
+            rc.borrow_mut().on_light_column_changed(x, z, y0, y1);
         }
     }
 
     fn all_changed(&self) {
         if let Some(rc) = self.renderer.upgrade() {
-            rc.borrow().on_all_changed();
+            rc.borrow_mut().on_all_changed();
         }
     }
 }

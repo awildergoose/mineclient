@@ -18,6 +18,10 @@ pub fn get_nano_time() -> JLong {
     Instant::now().elapsed().as_nanos() as JLong
 }
 
+pub fn get_milli_time() -> JLong {
+    Instant::now().elapsed().as_millis() as JLong
+}
+
 pub fn math_random() -> JFloat {
     let mut rng = rand::rng();
     rng.random::<f32>()
