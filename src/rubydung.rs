@@ -15,7 +15,8 @@ use crate::{
         init_display, is_display_close_requested, is_key_down, is_mouse_button_down,
         update_display,
     },
-    level::{chunk, level::Level, level_renderer::LevelRenderer, player::Player},
+    level::{chunk, level::Level, level_renderer::LevelRenderer},
+    player::Player,
     textures,
     timer::Timer,
 };
@@ -181,7 +182,7 @@ impl RubyDung {
         unsafe {
             gl::MatrixMode(5889);
             gl::LoadIdentity();
-            gluPerspective(70.0, (self.width / self.height) as f64, 0.05, 1000.0);
+            gluPerspective(70.0, self.width as f64 / self.height as f64, 0.05, 1000.0);
             gl::MatrixMode(5888);
             gl::LoadIdentity();
         }

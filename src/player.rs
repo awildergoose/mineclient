@@ -161,7 +161,7 @@ impl Player {
             xa *= dist;
             za *= dist;
             let sin = f32::sin(self.y_rot * PI / 180.0);
-            let cos = f32::sin(self.y_rot * PI / 180.0);
+            let cos = f32::cos(self.y_rot * PI / 180.0);
             self.xd += xa * cos - za * sin;
             self.zd += za * cos + xa * sin;
         }

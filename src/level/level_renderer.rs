@@ -13,10 +13,10 @@ use crate::{
         frustum,
         level::Level,
         level_listener::LevelListener,
-        player::Player,
         tesselator::Tesselator,
         tile::Tile,
     },
+    player::Player,
 };
 
 pub static CHUNK_SIZE: JInt = 16;

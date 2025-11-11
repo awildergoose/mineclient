@@ -7,6 +7,7 @@ pub mod hit_result;
 pub mod java;
 pub mod level;
 pub mod phys;
+pub mod player;
 pub mod rubydung;
 pub mod textures;
 pub mod timer;
