@@ -30,9 +30,10 @@ unsafe extern "C" {
     ) -> GLint;
 }
 
-fn resolve_texture(name: &str) -> ImageResult<DynamicImage> {
+pub fn resolve_texture(name: &str) -> ImageResult<DynamicImage> {
     match name {
         "terrain.png" => image::load_from_memory(include_bytes!("../assets/terrain.png")),
+        "char.png" => image::load_from_memory(include_bytes!("../assets/char.png")),
         _ => panic!("tried to resolve unknown texture: {}", name),
     }
 }
