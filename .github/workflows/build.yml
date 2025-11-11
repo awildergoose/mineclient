@@ -37,8 +37,9 @@ jobs:
                     libgl1-mesa-dev \
                     libglu1-mesa-dev
 
+            - uses: Swatinem/rust-cache@v2
             - name: Build
-              run: cargo build --release --verbose
+              run: cargo build --release
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4
