@@ -330,9 +330,9 @@ impl RubyDung {
         unsafe {
             gl::Clear(16640);
             self.setup_camera(a);
-            gl::Enable(2884);
-            gl::Enable(2912);
-            gl::Fogi(2917, 2048);
+            gl::Enable(gl::CULL_FACE);
+            gl::Enable(gl::FOG);
+            gl::Fogi(gl::FOG_MODE, 2048);
             gl::Fogf(2914, 0.2);
             gl::Fogfv(2918, self.fog_color.as_mut_ptr() as *mut _);
             gl::Disable(2912);
