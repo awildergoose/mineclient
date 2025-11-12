@@ -1,5 +1,9 @@
-use crate::{character::vec3::Vec3, java::JFloat};
+use crate::{
+    character::vec3::Vec3,
+    java::{JFloat, JInt},
+};
 
+#[derive(Clone)]
 pub struct Vertex {
     pub pos: Vec3,
     pub u: JFloat,
@@ -29,5 +33,11 @@ impl Vertex {
 
     pub fn remap(&self, u: JFloat, v: JFloat) -> Self {
         Vertex::new_from_vertex(self, u, v)
+    }
+
+    // helper
+    #[inline]
+    pub fn remapi(&self, u: JInt, v: JInt) -> Self {
+        Vertex::new_from_vertex(self, u as JFloat, v as JFloat)
     }
 }

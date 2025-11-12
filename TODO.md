@@ -2,6 +2,8 @@
 
 -   character/Vertex
 -   character/Vec3
+-   character/Polygon
+-   character/Cube
 -   level/Chunk
 -   Textures
 
@@ -14,6 +16,4 @@
 -   Entity
 -   Player
 -   RubyDung
--   character/Cube
--   character/Polygon
 -   character/Zombie
