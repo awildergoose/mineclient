@@ -139,6 +139,14 @@ impl Level {
         false
     }
 
+    pub fn is_lit(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
+        if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
+            true
+        } else {
+            y >= self.light_depths[(x + z * self.width) as usize]
+        }
+    }
+
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
         self.is_tile(x, y, z)
     }

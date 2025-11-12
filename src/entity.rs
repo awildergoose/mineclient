@@ -1,7 +1,7 @@
 use std::{cell::RefCell, f32::consts::PI, rc::Rc};
 
 use crate::{
-    java::{JBoolean, JFloat, math_random},
+    java::{JBoolean, JFloat, JInt, math_random},
     level::level::Level,
     phys::aabb::AABB,
     traits::Tickable,
@@ -23,6 +23,9 @@ pub struct Entity {
     pub x_rot: JFloat,
     pub bb: AABB,
     pub on_ground: JBoolean,
+    pub removed: JBoolean,
+    pub bb_width: JFloat,
+    pub bb_height: JFloat,
 }
 
 impl Entity {
@@ -43,6 +46,9 @@ impl Entity {
             bb: AABB::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
             on_ground: false,
             height_offset: 0.0,
+            removed: false,
+            bb_width: 0.6,
+            bb_height: 1.8,
         };
 
         this.reset_pos();
@@ -57,12 +63,21 @@ impl Entity {
         self.set_pos(x, y, z);
     }
 
-    fn set_pos(&mut self, x: JFloat, y: JFloat, z: JFloat) {
+    pub fn remove(&mut self) {
+        self.removed = true;
+    }
+
+    pub fn set_size(&mut self, w: JFloat, h: JFloat) {
+        self.bb_width = w;
+        self.bb_height = h;
+    }
+
+    pub fn set_pos(&mut self, x: JFloat, y: JFloat, z: JFloat) {
         self.x = x;
         self.y = y;
         self.z = z;
-        let w = 0.3;
-        let h = 0.9;
+        let w = self.bb_width / 2.0;
+        let h = self.bb_height / 2.0;
         self.bb = AABB::new(x - w, y - h, z - w, x + w, y + h, z + w);
     }
 
@@ -124,6 +139,13 @@ impl Entity {
             self.xd += xa * cos - za * sin;
             self.zd += za * cos + xa * sin;
         }
+    }
+
+    pub fn is_lit(&self) -> JBoolean {
+        let x_tile = self.x as JInt;
+        let y_tile = self.y as JInt;
+        let z_tile = self.z as JInt;
+        self.level.borrow_mut().is_lit(x_tile, y_tile, z_tile)
     }
 }
 
