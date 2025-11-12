@@ -13,6 +13,7 @@ use crate::{
         update_display,
     },
     level::{chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile},
+    particle::particle_engine::ParticleEngine,
     player::Player,
     textures,
     timer::Timer,
@@ -52,6 +53,7 @@ pub struct RubyDung {
     hit_result: Option<HitResult>,
     zombies: Vec<Zombie>,
     paint_texture: JInt,
+    particle_engine: Option<ParticleEngine>,
 }
 
 impl RubyDung {
@@ -70,6 +72,7 @@ impl RubyDung {
             hit_result: None,
             zombies: Vec::new(),
             paint_texture: 1,
+            particle_engine: None,
         }
     }
 
@@ -127,7 +130,10 @@ impl RubyDung {
         self.level = Some(level.clone());
         self.level_renderer = Some(LevelRenderer::new(level.clone()));
         self.player = Some(Player::new(level.clone()));
-        // TODO create particle engine here
+        self.particle_engine = Some(ParticleEngine::new(
+            level.clone(),
+            self.level_renderer.as_ref().unwrap().borrow().t.clone(),
+        ));
 
         grab_mouse();
 
@@ -172,7 +178,6 @@ impl RubyDung {
     }
 
     pub fn tick(&mut self) {
-        // TODO handle keyboard events here
         if is_key_down(glfw::Key::Enter) {
             if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
                 eprintln!("failed to save level: {:?}", err);
@@ -199,7 +204,7 @@ impl RubyDung {
             ));
         }
 
-        // TODO tick particle engine
+        self.particle_engine.as_mut().unwrap().tick();
         self.level.as_mut().unwrap().borrow_mut().tick();
 
         self.zombies.iter_mut().for_each(|z| z.tick());
@@ -390,7 +395,10 @@ impl RubyDung {
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 0);
 
-            // TODO render with particle engine
+            self.particle_engine
+                .as_mut()
+                .unwrap()
+                .render(self.player.as_ref().unwrap(), a, 0);
             self.setup_fog(1);
             self.level_renderer
                 .as_mut()
@@ -404,7 +412,10 @@ impl RubyDung {
                 }
             }
 
-            // TODO render with particle engine
+            self.particle_engine
+                .as_mut()
+                .unwrap()
+                .render(self.player.as_ref().unwrap(), a, 1);
             gl::Disable(2896);
             gl::Disable(gl::TEXTURE_2D);
             gl::Disable(2912);
