@@ -47,7 +47,7 @@ thread_local! {
 
 pub struct WindowContext {
     glfw: glfw::Glfw,
-    pub(crate) window: glfw::PWindow,
+    pub window: glfw::PWindow,
     events: GlfwReceiver<(f64, WindowEvent)>,
 }
 
@@ -104,8 +104,6 @@ pub fn handle_mouse_button(button: u8, pressed: bool) {
 
 pub fn handle_cursor_pos(x: f64, y: f64) {
     let mut pos = MOUSE_POS.lock().unwrap();
-    pos.2 = pos.0;
-    pos.3 = pos.1;
     pos.0 = x;
     pos.1 = y;
 }
