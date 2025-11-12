@@ -3,6 +3,7 @@ use std::sync::{Mutex, OnceLock};
 use crate::{
     java::{JBoolean, JInt},
     level::{level::Level, tesselator::Tesselator},
+    phys::aabb::AABB,
 };
 
 pub struct Tile {
@@ -210,5 +211,27 @@ impl Tile {
             t.vertex(x1, y1, z0);
             t.vertex(x1, y1, z1);
         }
+    }
+
+    pub fn get_tile_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
+        let x = x as f32;
+        let y = y as f32;
+        let z = z as f32;
+        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
+    }
+
+    pub fn get_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
+        let x = x as f32;
+        let y = y as f32;
+        let z = z as f32;
+        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
+    }
+
+    pub fn blocks_light(&self) -> JBoolean {
+        true
+    }
+
+    pub fn is_solid(&self) -> JBoolean {
+        true
     }
 }

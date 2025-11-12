@@ -13,7 +13,7 @@ use crate::{
         level::Level,
         level_listener::LevelListener,
         tesselator::Tesselator,
-        tile::{self, tile::Tile},
+        tile::tile::{Tile, get_tiles},
     },
     player::Player,
     textures,
@@ -89,10 +89,10 @@ impl LevelRenderer {
         renderer
     }
 
-    pub fn get_all_dirty_chunks(&self) -> Vec<&Chunk> {
-        let dirty = Vec::new();
+    pub fn get_all_dirty_chunks(&mut self) -> Vec<&mut Chunk> {
+        let mut dirty = Vec::new();
 
-        for c in &self.chunks {
+        for c in &mut self.chunks {
             if c.is_dirty() {
                 dirty.push(c);
             }
@@ -121,14 +121,14 @@ impl LevelRenderer {
         }
     }
 
-    pub fn update_dirty_chunks(&mut self, player: &Player) {
-        let dirty = self.get_all_dirty_chunks();
-
+    pub fn update_dirty_chunks(&mut self, _player: &Player) {
         // TODO sort
-        for i in 0..MAX_REBUILDS_PER_FRAME as usize {
-            if let Some(c) = dirty.get(i) {
-                c.rebuild_all();
-            }
+        for c in self
+            .get_all_dirty_chunks()
+            .into_iter()
+            .take(MAX_REBUILDS_PER_FRAME as usize)
+        {
+            c.rebuild_all();
         }
     }
 
@@ -161,8 +161,11 @@ impl LevelRenderer {
                 }
 
                 for z in z0..z1 {
-                    if let Some(tile) = tile::TILES.get(self.level.borrow_mut().get_tile(x, y, z))
-                        && frustum.is_visible(tile.getTileAABB(x, y, z))
+                    if let Some(tile) = get_tiles()
+                        .lock()
+                        .unwrap()
+                        .get(self.level.borrow_mut().get_tile(x, y, z) as usize)
+                        && frustum.is_visible(&tile.get_tile_aabb(x, y, z))
                     {
                         unsafe {
                             gl::LoadName(z as u32);
@@ -175,7 +178,7 @@ impl LevelRenderer {
                             }
 
                             t.init();
-                            tile.render_face_no_texture(t, x, y, z, i);
+                            tile.render_face_no_texture(&mut *t, x, y, z, i as i32);
                             t.flush();
                         }
 

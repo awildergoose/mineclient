@@ -366,7 +366,7 @@ impl RubyDung {
                 .render(self.player.as_ref().unwrap(), 1);
 
             for z in &mut self.zombies {
-                if z.is_lit() && frustum.lock().unwrap().is_visible(z.bb) {
+                if z.is_lit() && frustum.lock().unwrap().is_visible(&z.bb) {
                     z.render(a);
                 }
             }

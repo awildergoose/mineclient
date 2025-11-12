@@ -1,19 +1,21 @@
 use std::{
     cell::RefCell,
     rc::Rc,
-    sync::atomic::{AtomicI32, Ordering},
+    sync::atomic::{AtomicI32, AtomicI64, Ordering},
 };
 
 use crate::{
     gl,
-    java::{JBoolean, JFloat, JInt},
+    java::{JBoolean, JFloat, JInt, JLong, get_milli_time},
     level::{level::Level, tesselator::Tesselator, tile::tile::Tile},
     phys::aabb::AABB,
+    player::Player,
     textures,
 };
 
-pub static REBUILT_THIS_FRAME: AtomicI32 = AtomicI32::new(0);
 pub static UPDATES: AtomicI32 = AtomicI32::new(0);
+pub static TOTAL_TIME: AtomicI64 = AtomicI64::new(0);
+pub static TOTAL_UPDATES: AtomicI32 = AtomicI32::new(0);
 
 pub struct Chunk {
     pub aabb: AABB,
@@ -24,6 +26,10 @@ pub struct Chunk {
     pub x1: JInt,
     pub y1: JInt,
     pub z1: JInt,
+    pub x: JFloat,
+    pub y: JFloat,
+    pub z: JFloat,
+    pub dirtied_time: JLong,
     dirty: JBoolean,
     lists: u32,
     t: Rc<RefCell<Tesselator>>,
@@ -58,6 +64,10 @@ impl Chunk {
             x1,
             y1,
             z1,
+            x: (x0 + x1) as JFloat / 2.0,
+            y: (y0 + y1) as JFloat / 2.0,
+            z: (z0 + z1) as JFloat / 2.0,
+            dirtied_time: 0,
             dirty: true,
             lists: unsafe { gl::GenLists(2) },
         }
@@ -69,75 +79,69 @@ impl Chunk {
     }
 
     pub fn rebuild(&mut self, layer: u32) {
-        if REBUILT_THIS_FRAME.load(Ordering::SeqCst) != 2 {
-            self.dirty = false;
-            UPDATES.fetch_add(1, Ordering::SeqCst);
-            REBUILT_THIS_FRAME.fetch_add(1, Ordering::SeqCst);
+        // TODO check what changed here
+        self.dirty = false;
+        UPDATES.fetch_add(1, Ordering::SeqCst);
 
-            let tex_id = textures::load_2d_texture("terrain.png");
+        let tex_id = textures::load_2d_texture("terrain.png");
 
-            unsafe {
-                gl::NewList(self.lists + layer, gl::COMPILE);
-                gl::Enable(gl::TEXTURE_2D);
-                gl::BindTexture(gl::TEXTURE_2D, tex_id);
-            }
+        unsafe {
+            gl::NewList(self.lists + layer, gl::COMPILE);
+            gl::Enable(gl::TEXTURE_2D);
+            gl::BindTexture(gl::TEXTURE_2D, tex_id);
+        }
 
-            let mut t = self.t.borrow_mut();
-            t.init();
+        let mut t = self.t.borrow_mut();
+        t.init();
 
-            for x in self.x0..self.x1 {
-                for y in self.y0..self.y1 {
-                    for z in self.z0..self.z1 {
-                        if self.level.borrow().is_tile(x, y, z) {
-                            let tex = if y == self.level.borrow().depth * 2 / 3 {
-                                0
-                            } else {
-                                1
-                            };
+        for x in self.x0..self.x1 {
+            for y in self.y0..self.y1 {
+                for z in self.z0..self.z1 {
+                    if self.level.borrow().is_tile(x, y, z) {
+                        let tex = if y == self.level.borrow().depth * 2 / 3 {
+                            0
+                        } else {
+                            1
+                        };
 
-                            if tex == 0 {
-                                Tile::ROCK.render(
-                                    &mut t,
-                                    &self.level.borrow(),
-                                    layer as i32,
-                                    x,
-                                    y,
-                                    z,
-                                );
-                            } else {
-                                Tile::GRASS.render(
-                                    &mut t,
-                                    &self.level.borrow(),
-                                    layer as i32,
-                                    x,
-                                    y,
-                                    z,
-                                );
-                            }
+                        if tex == 0 {
+                            Tile::ROCK.render(&mut t, &self.level.borrow(), layer as i32, x, y, z);
+                        } else {
+                            Tile::GRASS.render(&mut t, &self.level.borrow(), layer as i32, x, y, z);
                         }
                     }
                 }
             }
+        }
 
-            t.flush();
+        t.flush();
 
-            unsafe {
-                gl::Disable(gl::TEXTURE_2D);
-                gl::EndList();
-            }
+        unsafe {
+            gl::Disable(gl::TEXTURE_2D);
+            gl::EndList();
         }
     }
 
     pub fn render(&mut self, layer: u32) {
-        if self.dirty {
-            self.rebuild(0);
-            self.rebuild(1);
-        }
-
         unsafe { gl::CallList(self.lists + layer) };
     }
 
     pub fn set_dirty(&mut self) {
+        if !self.dirty {
+            self.dirtied_time = get_milli_time();
+        }
+
         self.dirty = true;
+    }
+
+    pub fn is_dirty(&self) -> JBoolean {
+        self.dirty
+    }
+
+    pub fn distance_to_sqr(&self, player: Player) -> JFloat {
+        let xd = player.x - self.x;
+        let yd = player.y - self.y;
+        let zd = player.z - self.z;
+        xd * zd + yd * yd + zd * zd
     }
 }

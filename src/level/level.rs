@@ -237,4 +237,12 @@ impl Level {
             }
         }
     }
+
+    pub fn get_tile(&self, x: JInt, y: JInt, z: JInt) -> JInt {
+        if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
+            self.blocks[((y * self.height + z) * self.width + x) as usize] as JInt
+        } else {
+            0
+        }
+    }
 }
