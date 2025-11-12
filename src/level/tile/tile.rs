@@ -7,6 +7,7 @@ use crate::{
     java::{JBoolean, JInt},
     level::{level::Level, tesselator::Tesselator},
     phys::aabb::AABB,
+    traits::TickableTile,
 };
 
 pub struct Tile {
@@ -242,4 +243,8 @@ impl Tile {
     pub fn is_solid(&self) -> JBoolean {
         true
     }
+}
+
+impl TickableTile for Tile {
+    fn tick(&mut self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
 }

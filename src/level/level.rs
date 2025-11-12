@@ -12,6 +12,7 @@ use crate::{
         tile::tile::{Tile, get_tiles},
     },
     phys::aabb::AABB,
+    traits::TickableTile,
 };
 
 pub struct Level {
@@ -276,5 +277,29 @@ impl Level {
         false
     }
 
-    pub fn tick(&mut self) {}
+    pub fn tick(&mut self) {
+        self.unprocessed += self.width * self.height * self.depth;
+        let ticks = self.unprocessed / 400;
+        self.unprocessed -= ticks * 400;
+
+        let w = self.width as u32;
+        let d = self.depth as u32;
+        let h = self.height as u32;
+
+        for _ in 0..ticks {
+            let (x, y, z) = {
+                let r = &mut self.random;
+                (
+                    r.next_int_with_bound(w),
+                    r.next_int_with_bound(d),
+                    r.next_int_with_bound(h),
+                )
+            };
+            let tile_id = self.get_tile(x, y, z);
+
+            if let Some(tile) = get_tiles().lock().unwrap().get_mut(&tile_id) {
+                tile.tick(self, x, y, z);
+            }
+        }
+    }
 }
