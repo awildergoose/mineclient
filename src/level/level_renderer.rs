@@ -166,8 +166,8 @@ impl LevelRenderer {
 
     pub fn render_hit(&mut self, h: &HitResult) {
         unsafe {
-            gl::Enable(3042);
-            gl::BlendFunc(770, 1);
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, 1);
             gl::Color4f(
                 1.0,
                 1.0,
@@ -180,7 +180,7 @@ impl LevelRenderer {
         Tile::ROCK.render_face(&mut t, h.x, h.y, h.z, h.f);
         t.flush();
         unsafe {
-            gl::Disable(3042);
+            gl::Disable(gl::BLEND);
         }
     }
 

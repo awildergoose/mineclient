@@ -1,8 +1,4 @@
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::{Mutex, atomic::Ordering},
-};
+use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
 
 use crate::{
     gl::{
@@ -17,7 +13,6 @@ use crate::{
     },
     level::{chunk, level::Level, level_renderer::LevelRenderer},
     player::Player,
-    textures,
     timer::Timer,
 };
 
@@ -94,26 +89,19 @@ impl RubyDung {
             })
         });
 
-        let tex_id = textures::get_textures()
-            .lock()
-            .unwrap()
-            .load_texture("terrain.png", 9728);
-
-        let chunk_mutex = chunk::CHUNK_TEXTURE.get_or_init(|| Mutex::new(0));
-        *chunk_mutex.lock().unwrap() = tex_id;
-
         self.width = 1024;
         self.height = 768;
+
         unsafe {
-            gl::Enable(3553);
-            gl::ShadeModel(7425);
+            gl::Enable(gl::TEXTURE_2D);
+            gl::ShadeModel(gl::SMOOTH);
             gl::ClearColor(fr, fg, fb, 0.0);
             gl::ClearDepth(1.0);
-            gl::Enable(2929);
-            gl::DepthFunc(515);
-            gl::MatrixMode(5889);
+            gl::Enable(gl::DEPTH_TEST);
+            gl::DepthFunc(gl::LEQUAL);
+            gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
-            gl::MatrixMode(5888);
+            gl::MatrixMode(gl::MODELVIEW);
         }
 
         let level = Rc::new(RefCell::new(Level::new(256, 256, 64)));
@@ -182,10 +170,10 @@ impl RubyDung {
 
     fn setup_camera(&mut self, a: JFloat) {
         unsafe {
-            gl::MatrixMode(5889);
+            gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
             gluPerspective(70.0, self.width as f64 / self.height as f64, 0.05, 1000.0);
-            gl::MatrixMode(5888);
+            gl::MatrixMode(gl::MODELVIEW);
             gl::LoadIdentity();
         }
         self.move_camera_to_player(a);
@@ -193,12 +181,12 @@ impl RubyDung {
 
     fn setup_pick_camera(&mut self, a: JFloat, x: JFloat, y: JFloat) {
         unsafe {
-            gl::MatrixMode(5889);
+            gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
         }
         self.viewport_buffer = [0; 16];
         unsafe {
-            gl::GetIntegerv(2978, self.viewport_buffer.as_mut_ptr());
+            gl::GetIntegerv(gl::VIEWPORT, self.viewport_buffer.as_mut_ptr());
             gluPickMatrix(
                 x as f64,
                 y as f64,
@@ -207,7 +195,7 @@ impl RubyDung {
                 self.viewport_buffer.as_mut_ptr(),
             );
             gluPerspective(70.0, self.width as f64 / self.height as f64, 0.05, 1000.0);
-            gl::MatrixMode(5888);
+            gl::MatrixMode(gl::MODELVIEW);
             gl::LoadIdentity();
         };
         self.move_camera_to_player(a);
@@ -220,7 +208,7 @@ impl RubyDung {
                 self.select_buffer.len() as i32,
                 self.select_buffer.as_mut_ptr() as *mut _,
             );
-            gl::RenderMode(7170);
+            gl::RenderMode(gl::SELECT);
         }
         self.setup_pick_camera(a, (self.width / 2) as f32, (self.height / 2) as f32);
         self.level_renderer
@@ -228,7 +216,7 @@ impl RubyDung {
             .unwrap()
             .borrow_mut()
             .pick(self.player.as_ref().unwrap());
-        let hits = unsafe { gl::RenderMode(7168) };
+        let hits = unsafe { gl::RenderMode(gl::RENDER) };
         let mut closest = 0;
         let mut names = [0; 10];
         let mut hit_name_count = 0;
@@ -332,21 +320,21 @@ impl RubyDung {
             gl::Enable(gl::CULL_FACE);
             gl::Enable(gl::FOG);
             gl::Fogi(gl::FOG_MODE, 2048);
-            gl::Fogf(2914, 0.2);
-            gl::Fogfv(2918, self.fog_color.as_mut_ptr() as *mut _);
-            gl::Disable(2912);
+            gl::Fogf(gl::FOG_DENSITY, 0.2);
+            gl::Fogfv(gl::FOG_COLOR, self.fog_color.as_mut_ptr() as *mut _);
+            gl::Disable(gl::FOG);
             self.level_renderer
                 .as_mut()
                 .unwrap()
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 0);
-            gl::Enable(2912);
+            gl::Enable(gl::FOG);
             self.level_renderer
                 .as_mut()
                 .unwrap()
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 1);
-            gl::Disable(3553);
+            gl::Disable(gl::TEXTURE_2D);
 
             if let Some(ref hit) = self.hit_result {
                 self.level_renderer
@@ -356,7 +344,7 @@ impl RubyDung {
                     .render_hit(hit);
             }
 
-            gl::Disable(2912);
+            gl::Disable(gl::FOG);
             update_display();
         }
     }

@@ -1,10 +1,7 @@
 use std::{
     cell::RefCell,
     rc::Rc,
-    sync::{
-        Mutex, OnceLock,
-        atomic::{AtomicI32, Ordering},
-    },
+    sync::atomic::{AtomicI32, Ordering},
 };
 
 use crate::{
@@ -12,9 +9,9 @@ use crate::{
     java::{JBoolean, JFloat, JInt},
     level::{level::Level, tesselator::Tesselator, tile::Tile},
     phys::aabb::AABB,
+    textures,
 };
 
-pub static CHUNK_TEXTURE: OnceLock<Mutex<u32>> = OnceLock::new();
 pub static REBUILT_THIS_FRAME: AtomicI32 = AtomicI32::new(0);
 pub static UPDATES: AtomicI32 = AtomicI32::new(0);
 
@@ -71,11 +68,18 @@ impl Chunk {
             self.dirty = false;
             UPDATES.fetch_add(1, Ordering::SeqCst);
             REBUILT_THIS_FRAME.fetch_add(1, Ordering::SeqCst);
+
+            let tex_id = textures::get_textures()
+                .lock()
+                .unwrap()
+                .load_texture("terrain.png", 9728);
+
             unsafe {
-                gl::NewList(self.lists + layer, 4864);
-                gl::Enable(3553);
-                gl::BindTexture(3553, *CHUNK_TEXTURE.get().unwrap().lock().unwrap());
+                gl::NewList(self.lists + layer, gl::COMPILE);
+                gl::Enable(gl::TEXTURE_2D);
+                gl::BindTexture(gl::TEXTURE_2D, tex_id);
             }
+
             let mut t = self.t.borrow_mut();
             t.init();
 
@@ -116,7 +120,7 @@ impl Chunk {
             t.flush();
 
             unsafe {
-                gl::Disable(3553);
+                gl::Disable(gl::TEXTURE_2D);
                 gl::EndList();
             }
         }

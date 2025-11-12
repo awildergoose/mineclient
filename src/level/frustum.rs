@@ -64,8 +64,8 @@ impl Frustum {
         self._modl = [0.0; 16];
         self._clip = [0.0; 16];
         unsafe {
-            gl::GetFloatv(2983, self._proj.as_mut_ptr());
-            gl::GetFloatv(2982, self._modl.as_mut_ptr());
+            gl::GetFloatv(gl::PROJECTION_MATRIX, self._proj.as_mut_ptr());
+            gl::GetFloatv(gl::MODELVIEW_MATRIX, self._modl.as_mut_ptr());
         }
         self.proj.copy_from_slice(&self._proj);
         self.modl.copy_from_slice(&self._modl);
