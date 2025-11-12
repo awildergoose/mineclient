@@ -44,6 +44,7 @@ impl Textures {
         }
     }
 
+    // Should this really be inline?
     #[inline(always)]
     pub fn load_texture(&self, resource_name: &str, mode: i32) -> u32 {
         if let Some(&id) = self.id_map.borrow().get(resource_name) {
