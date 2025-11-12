@@ -24,7 +24,7 @@ impl Polygon {
 
             for i in (0..=3).rev() {
                 let v = &self.vertices[i];
-                gl::TexCoord2f(v.u / 64.0, v.v / 32.0);
+                gl::TexCoord2f(v.u / 63.999, v.v / 31.999);
                 gl::Vertex3f(v.pos.x, v.pos.y, v.pos.z);
             }
         }

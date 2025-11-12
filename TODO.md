@@ -1,12 +1,12 @@
 # complete
 
 -   character/Cube
+-   character/Polygon
 
 # partial
 
 # incomplete
 
--   character/Polygon
 -   character/Zombie
 -   character/ZombieModel
 -   level/tile/Bush
