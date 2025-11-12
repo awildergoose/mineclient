@@ -12,10 +12,12 @@ use crate::{
         init_display, is_display_close_requested, is_key_down, is_mouse_button_down,
         update_display,
     },
-    level::{chunk, frustum, level::Level, level_renderer::LevelRenderer},
+    level::{
+        chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile_mut,
+    },
     player::Player,
     timer::Timer,
-    traits::{Drawable, Tickable},
+    traits::{Drawable, Tickable, TileDestructionEvent},
 };
 
 unsafe extern "C" {
@@ -313,12 +315,16 @@ impl RubyDung {
         if is_mouse_button_down(1)
             && let Some(ref hit) = hito
         {
-            // TODO use tile.destroy here
-            self.level
-                .as_mut()
-                .unwrap()
-                .borrow_mut()
-                .set_tile(hit.x, hit.y, hit.z, 0);
+            let binding = self.level.as_mut().unwrap();
+            let mut level = binding.borrow_mut();
+            let mut old_tile = get_tile_mut(level.get_tile(hit.x, hit.y, hit.z));
+            let changed = level.set_tile(hit.x, hit.y, hit.z, 0);
+
+            if let Some(otile) = old_tile.as_mut()
+                && changed
+            {
+                otile.destroy(&mut level, hit.x, hit.y, hit.z); //, self.particle_engine);
+            }
         }
 
         if is_mouse_button_down(0)
