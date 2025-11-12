@@ -143,8 +143,9 @@ impl Tesselator {
 
     #[inline]
     fn advance(&mut self) -> usize {
+        let old = self.p;
         self.p += 1;
-        self.p
+        old
     }
 }
 
