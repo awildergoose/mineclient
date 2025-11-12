@@ -131,7 +131,7 @@ impl RubyDung {
 
         grab_mouse();
 
-        for _i in 0..100 {
+        for _i in 0..10 {
             let mut zombie = Zombie::new(level.clone(), 128.0, 0.0, 128.0);
             zombie.reset_pos();
             self.zombies.push(zombie);
@@ -189,6 +189,14 @@ impl RubyDung {
             self.paint_texture = 5;
         } else if is_key_down(glfw::Key::Num6) {
             self.paint_texture = 6;
+        } else if is_key_down(glfw::Key::G) {
+            let player = self.player.as_ref().unwrap();
+            self.zombies.push(Zombie::new(
+                self.level.as_ref().unwrap().clone(),
+                player.x,
+                player.y,
+                player.z,
+            ));
         }
 
         // TODO tick particle engine
