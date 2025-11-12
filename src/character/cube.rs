@@ -3,7 +3,8 @@ use std::f32::consts::PI;
 use crate::{
     character::{polygon::Polygon, vertex::Vertex},
     gl,
-    java::{JFloat, JInt},
+    java::{JBoolean, JFloat, JInt},
+    traits::TimelessDrawable,
 };
 
 pub struct Cube {
@@ -11,6 +12,8 @@ pub struct Cube {
     polygons: Vec<Polygon>,
     x_tex_offs: JInt,
     y_tex_offs: JInt,
+    compiled: JBoolean,
+    list: u32,
     pub x: JFloat,
     pub y: JFloat,
     pub z: JFloat,
@@ -32,6 +35,8 @@ impl Cube {
             x_rot: 0.0,
             y_rot: 0.0,
             z_rot: 0.0,
+            compiled: false,
+            list: 0,
         }
     }
 
@@ -116,7 +121,29 @@ impl Cube {
         self.z = z;
     }
 
-    pub fn render(&self) {
+    pub fn compile(&mut self) {
+        unsafe {
+            self.list = gl::GenLists(1);
+            gl::NewList(self.list, 4864); // TODO resolve gl
+            gl::Begin(7); // TODO resolve gl
+
+            for p in &self.polygons {
+                p.render();
+            }
+
+            gl::End();
+            gl::EndList();
+        }
+        self.compiled = true;
+    }
+}
+
+impl TimelessDrawable for Cube {
+    fn render(&mut self) {
+        if !self.compiled {
+            self.compile();
+        }
+
         let c = 180.0 / PI;
         unsafe {
             gl::PushMatrix();
@@ -124,13 +151,7 @@ impl Cube {
             gl::Rotatef(self.z_rot * c, 0.0, 0.0, 1.0);
             gl::Rotatef(self.y_rot * c, 0.0, 1.0, 0.0);
             gl::Rotatef(self.x_rot * c, 1.0, 0.0, 0.0);
-            gl::Begin(gl::QUADS);
-
-            for p in &self.polygons {
-                p.render();
-            }
-
-            gl::End();
+            gl::CallList(self.list);
             gl::PopMatrix();
         }
     }

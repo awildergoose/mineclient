@@ -1,10 +1,11 @@
 # complete
 
+-   character/Cube
+
 # partial
 
 # incomplete
 
--   character/Cube
 -   character/Polygon
 -   character/Zombie
 -   character/ZombieModel

@@ -12,7 +12,7 @@ use crate::{
     java::{JFloat, get_nano_time, math_random},
     level::level::Level,
     textures,
-    traits::{Drawable, Tickable},
+    traits::{Drawable, Tickable, TimelessDrawable},
 };
 
 pub struct Zombie {

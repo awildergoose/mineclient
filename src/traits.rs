@@ -7,3 +7,7 @@ pub trait Tickable {
 pub trait Drawable {
     fn render(&mut self, a: JFloat);
 }
+
+pub trait TimelessDrawable {
+    fn render(&mut self);
+}
