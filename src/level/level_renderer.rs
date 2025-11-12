@@ -1,7 +1,6 @@
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
-    sync::atomic::Ordering,
 };
 
 use crate::{
@@ -9,17 +8,19 @@ use crate::{
     hit_result::HitResult,
     java::{JFloat, JInt, get_milli_time},
     level::{
-        chunk::{self, Chunk},
-        frustum,
+        chunk::Chunk,
+        frustum::{self, Frustum},
         level::Level,
         level_listener::LevelListener,
         tesselator::Tesselator,
-        tile::Tile,
+        tile::{self, tile::Tile},
     },
     player::Player,
+    textures,
 };
 
 pub static CHUNK_SIZE: JInt = 16;
+pub static MAX_REBUILDS_PER_FRAME: JInt = 8;
 
 type LevelRef = Rc<RefCell<Level>>;
 
@@ -88,18 +89,50 @@ impl LevelRenderer {
         renderer
     }
 
+    pub fn get_all_dirty_chunks(&self) -> Vec<&Chunk> {
+        let dirty = Vec::new();
+
+        for c in &self.chunks {
+            if c.is_dirty() {
+                dirty.push(c);
+            }
+        }
+
+        dirty
+    }
+
     pub fn render(&mut self, _player: &Player, layer: u32) {
-        chunk::REBUILT_THIS_FRAME.store(0, Ordering::SeqCst);
+        unsafe {
+            gl::Enable(3553);
+            let id = textures::load_2d_texture("terrain.png");
+            gl::BindTexture(3553, id);
+        };
+
         let frustum = frustum::get_frustum();
 
         for c in &mut self.chunks {
-            if frustum.lock().unwrap().aabb_in_frustum(&c.aabb) {
+            if frustum.lock().unwrap().is_visible(&c.aabb) {
                 c.render(layer);
+            }
+        }
+
+        unsafe {
+            gl::Disable(3553);
+        }
+    }
+
+    pub fn update_dirty_chunks(&mut self, player: &Player) {
+        let dirty = self.get_all_dirty_chunks();
+
+        // TODO sort
+        for i in 0..MAX_REBUILDS_PER_FRAME as usize {
+            if let Some(c) = dirty.get(i) {
+                c.rebuild_all();
             }
         }
     }
 
-    pub fn pick(&mut self, player: &Player) {
+    pub fn pick(&mut self, player: &Player, frustum: &Frustum) {
         let mut t = self.t.borrow_mut();
         let r = 3.0;
         let pbox = player.bb.grow(r, r, r);
@@ -109,47 +142,46 @@ impl LevelRenderer {
         let y1 = pbox.y1 as JInt;
         let z0 = pbox.z0 as JInt;
         let z1 = pbox.z1 as JInt;
-        unsafe { gl::InitNames() };
+        unsafe {
+            gl::InitNames();
+            gl::PushName(0);
+            gl::PushName(0);
+        };
 
         for x in x0..x1 {
             unsafe {
-                gl::PushName(x as u32);
+                gl::LoadName(x as u32);
+                gl::PushName(0);
             }
 
             for y in y0..y1 {
                 unsafe {
-                    gl::PushName(y as u32);
+                    gl::LoadName(y as u32);
+                    gl::PushName(0);
                 }
 
                 for z in z0..z1 {
-                    unsafe {
-                        gl::PushName(z as u32);
-                    }
-
-                    if self.level.borrow().is_solid_tile(x, y, z) {
+                    if let Some(tile) = tile::TILES.get(self.level.borrow_mut().get_tile(x, y, z))
+                        && frustum.is_visible(tile.getTileAABB(x, y, z))
+                    {
                         unsafe {
+                            gl::LoadName(z as u32);
                             gl::PushName(0);
                         }
 
                         for i in 0..6 {
                             unsafe {
-                                gl::PushName(i as u32);
+                                gl::LoadName(i);
                             }
+
                             t.init();
-                            Tile::ROCK.render_face(&mut t, x, y, z, i);
+                            tile.render_face_no_texture(t, x, y, z, i);
                             t.flush();
-                            unsafe {
-                                gl::PopName();
-                            }
                         }
 
                         unsafe {
                             gl::PopName();
                         }
-                    }
-
-                    unsafe {
-                        gl::PopName();
                     }
                 }
 
@@ -159,6 +191,7 @@ impl LevelRenderer {
             }
 
             unsafe {
+                gl::PopName();
                 gl::PopName();
             }
         }
@@ -172,12 +205,12 @@ impl LevelRenderer {
                 1.0,
                 1.0,
                 1.0,
-                f32::sin(get_milli_time() as JFloat / 100.0) * 0.2 + 0.4,
+                (f32::sin(get_milli_time() as JFloat / 100.0) * 0.2 + 0.4) * 0.5,
             );
         }
         let mut t = self.t.borrow_mut();
         t.init();
-        Tile::ROCK.render_face(&mut t, h.x, h.y, h.z, h.f);
+        Tile::ROCK.render_face_no_texture(&mut t, h.x, h.y, h.z, h.f);
         t.flush();
         unsafe {
             gl::Disable(gl::BLEND);

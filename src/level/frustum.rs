@@ -339,7 +339,7 @@ impl Frustum {
         true
     }
 
-    pub fn aabb_in_frustum(&self, aabb: &AABB) -> JBoolean {
+    pub fn is_visible(&self, aabb: &AABB) -> JBoolean {
         self.cube_in_frustum(aabb.x0, aabb.y0, aabb.z0, aabb.x1, aabb.y1, aabb.z1)
     }
 }

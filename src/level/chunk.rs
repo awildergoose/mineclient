@@ -7,7 +7,7 @@ use std::{
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt},
-    level::{level::Level, tesselator::Tesselator, tile::Tile},
+    level::{level::Level, tesselator::Tesselator, tile::tile::Tile},
     phys::aabb::AABB,
     textures,
 };
@@ -63,7 +63,12 @@ impl Chunk {
         }
     }
 
-    fn rebuild(&mut self, layer: u32) {
+    pub fn rebuild_all(&mut self) {
+        self.rebuild(0);
+        self.rebuild(1);
+    }
+
+    pub fn rebuild(&mut self, layer: u32) {
         if REBUILT_THIS_FRAME.load(Ordering::SeqCst) != 2 {
             self.dirty = false;
             UPDATES.fetch_add(1, Ordering::SeqCst);

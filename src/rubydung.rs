@@ -239,11 +239,12 @@ impl RubyDung {
         }
         self.setup_pick_camera(a, (self.width / 2) as f32, (self.height / 2) as f32);
         // TODO pass frustum
+        let frustum = frustum::get_frustum().lock().unwrap();
         self.level_renderer
             .as_mut()
             .unwrap()
             .borrow_mut()
-            .pick(self.player.as_ref().unwrap());
+            .pick(self.player.as_ref().unwrap(), &frustum);
         let hits = unsafe { gl::RenderMode(gl::RENDER) };
         let mut closest = 0;
         let mut names = [0; 10];
@@ -343,7 +344,11 @@ impl RubyDung {
             self.setup_camera(a);
             gl::Enable(gl::CULL_FACE);
             let frustum = frustum::get_frustum();
-            // TODO update_dirty_chunks here
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .update_dirty_chunks(self.player.as_ref().unwrap());
             self.setup_fog(0);
             gl::Enable(2912);
             self.level_renderer
@@ -361,8 +366,9 @@ impl RubyDung {
                 .render(self.player.as_ref().unwrap(), 1);
 
             for z in &mut self.zombies {
-                z.render(a);
-                // TODO check if zombie is list and visible
+                if z.is_lit() && frustum.lock().unwrap().is_visible(z.bb) {
+                    z.render(a);
+                }
             }
 
             // TODO render with particle engine

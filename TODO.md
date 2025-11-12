@@ -4,11 +4,13 @@
 -   character/Polygon
 -   character/Zombie
 -   character/ZombieModel
+-   Textures
 
 # partial
 
 -   level/Level
 -   Entity
+-   RubyDung
 
 # incomplete
 
@@ -26,5 +28,3 @@
 -   particle/ParticleEngine
 -   HitResult
 -   Player
--   RubyDung
--   Textures

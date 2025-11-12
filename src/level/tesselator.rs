@@ -1,14 +1,15 @@
+use std::ffi::c_void;
+
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt},
 };
 
-pub static MAX_VERTICES: JInt = 100000;
+pub static MAX_MEMORY_USE: JInt = 4194304;
+pub static MAX_FLOATS: usize = 524288;
 
 pub struct Tesselator {
-    vertex_buffer: Vec<JFloat>,
-    tex_coord_buffer: Vec<JFloat>,
-    color_buffer: Vec<JFloat>,
+    buffer: Vec<JFloat>,
     vertices: JInt,
     u: JFloat,
     v: JFloat,
@@ -17,14 +18,14 @@ pub struct Tesselator {
     b: JFloat,
     has_color: JBoolean,
     has_texture: JBoolean,
+    len: usize,
+    p: usize,
 }
 
 impl Tesselator {
     pub fn new() -> Self {
         Self {
-            vertex_buffer: vec![0.0; 300000],
-            tex_coord_buffer: vec![0.0; 200000],
-            color_buffer: vec![0.0; 300000],
+            buffer: vec![0.0; MAX_FLOATS],
             vertices: 0,
             u: 0.0,
             v: 0.0,
@@ -33,37 +34,18 @@ impl Tesselator {
             b: 0.0,
             has_color: false,
             has_texture: false,
+            len: 3,
+            p: 0,
         }
     }
 
     pub fn flush(&mut self) {
         unsafe {
-            gl::VertexPointer(3, gl::FLOAT, 0, self.vertex_buffer.as_ptr() as *const _);
-
-            if self.has_texture {
-                gl::TexCoordPointer(2, gl::FLOAT, 0, self.tex_coord_buffer.as_ptr() as *const _);
-            }
-
-            if self.has_color {
-                gl::ColorPointer(3, gl::FLOAT, 0, self.color_buffer.as_ptr() as *const _);
-            }
-
-            gl::EnableClientState(gl::VERTEX_ARRAY);
-            if self.has_texture {
-                gl::EnableClientState(gl::TEXTURE_COORD_ARRAY);
-            }
-            if self.has_color {
-                gl::EnableClientState(gl::COLOR_ARRAY);
-            }
-
-            gl::DrawArrays(gl::QUADS, 0, self.vertices);
-
-            gl::DisableClientState(gl::VERTEX_ARRAY);
-            if self.has_texture {
-                gl::DisableClientState(gl::TEXTURE_COORD_ARRAY);
-            }
-            if self.has_color {
-                gl::DisableClientState(gl::COLOR_ARRAY);
+            let buffer = self.buffer.as_mut_ptr() as *const c_void;
+            if self.has_texture && self.has_color {
+                gl::InterleavedArrays(10794, 0, buffer);
+            } else if self.has_texture {
+                gl::InterleavedArrays(10791, 0, buffer);
             }
         }
 
@@ -93,28 +75,45 @@ impl Tesselator {
         self.b = b;
     }
 
-    pub fn vertex(&mut self, x: JFloat, y: JFloat, z: JFloat) {
-        let vi = (self.vertices * 3) as usize;
-        self.vertex_buffer[vi] = x;
-        self.vertex_buffer[vi + 1] = y;
-        self.vertex_buffer[vi + 2] = z;
+    pub fn vertex_uv(&mut self, x: JFloat, y: JFloat, z: JFloat, u: JFloat, v: JFloat) {
+        self.tex(u, v);
+        self.vertex(x, y, z);
+    }
 
+    pub fn vertex(&mut self, x: JFloat, y: JFloat, z: JFloat) {
         if self.has_texture {
-            let ti = (self.vertices * 2) as usize;
-            self.tex_coord_buffer[ti] = self.u;
-            self.tex_coord_buffer[ti + 1] = self.v;
+            self.p += 1;
+            let p = self.p;
+            self.buffer[p] = self.u;
+            self.p += 1;
+            let p = self.p;
+            self.buffer[p] = self.v;
         }
 
         if self.has_color {
-            let ci = (self.vertices * 3) as usize;
-            self.color_buffer[ci] = self.r;
-            self.color_buffer[ci + 1] = self.g;
-            self.color_buffer[ci + 2] = self.b;
+            self.p += 1;
+            let p = self.p;
+            self.buffer[p] = self.r;
+            self.p += 1;
+            let p = self.p;
+            self.buffer[p] = self.g;
+            self.p += 1;
+            let p = self.p;
+            self.buffer[p] = self.b;
         }
 
+        self.p += 1;
+        let p = self.p;
+        self.buffer[p] = x;
+        self.p += 1;
+        let p = self.p;
+        self.buffer[p] = y;
+        self.p += 1;
+        let p = self.p;
+        self.buffer[p] = z;
         self.vertices += 1;
 
-        if self.vertices == MAX_VERTICES {
+        if self.vertices % 4 == 0 && self.p >= MAX_FLOATS - self.len * 4 {
             self.flush();
         }
     }
