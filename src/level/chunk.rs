@@ -69,10 +69,7 @@ impl Chunk {
             UPDATES.fetch_add(1, Ordering::SeqCst);
             REBUILT_THIS_FRAME.fetch_add(1, Ordering::SeqCst);
 
-            let tex_id = textures::get_textures()
-                .lock()
-                .unwrap()
-                .load_texture("terrain.png", 9728);
+            let tex_id = textures::load_2d_texture("terrain.png");
 
             unsafe {
                 gl::NewList(self.lists + layer, gl::COMPILE);

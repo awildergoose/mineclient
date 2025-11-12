@@ -17,6 +17,10 @@ pub fn get_textures() -> &'static Mutex<Textures> {
     TEXTURES.get_or_init(|| Mutex::new(Textures::new()))
 }
 
+pub fn load_2d_texture(name: &str) -> u32 {
+    get_textures().lock().unwrap().load_texture(name, 9728)
+}
+
 unsafe extern "C" {
     pub fn gluBuild2DMipmaps(
         target: GLenum,
