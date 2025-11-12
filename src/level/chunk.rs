@@ -87,15 +87,16 @@ impl Chunk {
         t.init();
 
         let mut tiles = 0;
+        let level = self.level.borrow_mut();
 
         for x in self.x0..self.x1 {
             for y in self.y0..self.y1 {
                 for z in self.z0..self.z1 {
-                    let tile_id = self.level.borrow().get_tile(x, y, z);
+                    let tile_id = level.get_tile(x, y, z);
                     if tile_id > 0 {
                         get_tiles().lock().unwrap().get(&tile_id).unwrap().render(
                             &mut t,
-                            &self.level.borrow_mut(),
+                            &level,
                             layer as i32,
                             x,
                             y,

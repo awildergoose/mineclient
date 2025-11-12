@@ -100,7 +100,7 @@ impl Tile {
         z: JInt,
         layer: JInt,
     ) -> JBoolean {
-        (!level.is_solid_tile(x, y, z) && level.is_lit(x, y, z)) ^ (layer == 1)
+        !level.is_solid_tile(x, y, z) && (level.is_lit(x, y, z) ^ (layer == 1))
     }
 
     pub fn get_texture(&self, _face: JInt) -> JInt {
