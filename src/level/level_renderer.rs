@@ -14,7 +14,7 @@ use crate::{
         level::Level,
         level_listener::LevelListener,
         tesselator::Tesselator,
-        tile::tile::{Tile, get_tiles},
+        tile::tile::{Tile, get_tile},
     },
     player::Player,
     textures,
@@ -191,28 +191,26 @@ impl LevelRenderer {
                 }
 
                 for z in z0..z1 {
-                    if let Some(tile) = get_tiles().get(&self.level.borrow_mut().get_tile(x, y, z))
+                    if let Some(tile) = get_tile(self.level.borrow_mut().get_tile(x, y, z))
+                        && frustum.is_visible(&tile.get_tile_aabb(x, y, z))
                     {
-                        let tile = tile.read().unwrap();
-                        if frustum.is_visible(&tile.get_tile_aabb(x, y, z)) {
+                        unsafe {
+                            gl::LoadName(z as u32);
+                            gl::PushName(0);
+                        }
+
+                        for i in 0..6 {
                             unsafe {
-                                gl::LoadName(z as u32);
-                                gl::PushName(0);
+                                gl::LoadName(i);
                             }
 
-                            for i in 0..6 {
-                                unsafe {
-                                    gl::LoadName(i);
-                                }
+                            t.init();
+                            tile.render_face_no_texture(&mut t, x, y, z, i as i32);
+                            t.flush();
+                        }
 
-                                t.init();
-                                tile.render_face_no_texture(&mut t, x, y, z, i as i32);
-                                t.flush();
-                            }
-
-                            unsafe {
-                                gl::PopName();
-                            }
+                        unsafe {
+                            gl::PopName();
                         }
                     }
                 }

@@ -7,7 +7,7 @@ use std::{
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt, JLong, get_milli_time, get_nano_time},
-    level::{level::Level, tesselator::Tesselator, tile::tile::get_tiles},
+    level::{level::Level, tesselator::Tesselator, tile::tile::get_tile},
     phys::aabb::AABB,
     player::Player,
 };
@@ -94,14 +94,9 @@ impl Chunk {
                 for z in self.z0..self.z1 {
                     let tile_id = level.get_tile(x, y, z);
                     if tile_id > 0 {
-                        get_tiles().get(&tile_id).unwrap().read().unwrap().render(
-                            &mut t,
-                            &level,
-                            layer as i32,
-                            x,
-                            y,
-                            z,
-                        );
+                        get_tile(tile_id)
+                            .unwrap()
+                            .render(&mut t, &level, layer as i32, x, y, z);
                         tiles += 1;
                     }
                 }

@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, OnceLock, RwLock},
-};
+use std::sync::OnceLock;
 
 use crate::{
     java::{JBoolean, JInt},
@@ -10,27 +7,41 @@ use crate::{
     traits::{TickableTile, TileDestructionEvent},
 };
 
+#[derive(Debug)]
 pub struct Tile {
     tex: JInt,
     pub id: JInt,
 }
 
-static TILES: OnceLock<HashMap<JInt, Arc<RwLock<Tile>>>> = OnceLock::new();
+static mut TILES: OnceLock<Vec<Tile>> = OnceLock::new();
 
-pub fn get_tiles() -> &'static HashMap<JInt, Arc<RwLock<Tile>>> {
-    TILES.get_or_init(|| {
-        let mut tiles = HashMap::new();
-        tiles.insert(Tile::ROCK.id, Arc::new(RwLock::new(Tile::ROCK)));
-        tiles.insert(Tile::GRASS.id, Arc::new(RwLock::new(Tile::GRASS)));
-        tiles.insert(Tile::DIRT.id, Arc::new(RwLock::new(Tile::DIRT)));
-        tiles.insert(
-            Tile::STONE_BRICK.id,
-            Arc::new(RwLock::new(Tile::STONE_BRICK)),
-        );
-        tiles.insert(Tile::WOOD.id, Arc::new(RwLock::new(Tile::WOOD)));
-        tiles.insert(Tile::BUSH.id, Arc::new(RwLock::new(Tile::BUSH)));
-        tiles
-    })
+fn init_tiles() -> Vec<Tile> {
+    vec![
+        Tile::ROCK,
+        Tile::GRASS,
+        Tile::DIRT,
+        Tile::STONE_BRICK,
+        Tile::WOOD,
+        Tile::BUSH,
+    ]
+}
+
+#[allow(static_mut_refs)]
+pub fn get_tiles() -> &'static mut Vec<Tile> {
+    unsafe {
+        if TILES.get().is_none() {
+            TILES.set(init_tiles()).unwrap();
+        }
+        TILES.get_mut().unwrap()
+    }
+}
+
+pub fn get_tile(id: JInt) -> Option<&'static Tile> {
+    get_tiles().iter().find(|t| t.id == id)
+}
+
+pub fn get_tile_mut(id: JInt) -> Option<&'static mut Tile> {
+    get_tiles().iter_mut().find(|t| t.id == id)
 }
 
 impl Tile {

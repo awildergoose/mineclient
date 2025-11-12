@@ -9,7 +9,7 @@ use crate::{
     level::{
         level_listener::LevelListener,
         perlin_noise_filter::PerlinNoiseFilter,
-        tile::tile::{Tile, get_tiles},
+        tile::tile::{Tile, get_tile, get_tile_mut},
     },
     phys::aabb::AABB,
     traits::TickableTile,
@@ -178,12 +178,9 @@ impl Level {
     }
 
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        let binding = get_tiles();
-        let tile = binding.get(&self.get_tile(x, y, z));
-        if let Some(t) = tile {
-            return t.read().unwrap().blocks_light();
-        }
-        false
+        get_tile(self.get_tile(x, y, z))
+            .map(|t| t.blocks_light())
+            .unwrap_or(false)
     }
 
     pub fn get_cubes(&self, aabb: AABB) -> Vec<AABB> {
@@ -219,13 +216,11 @@ impl Level {
             z1 = self.height;
         }
 
-        let tiles = get_tiles();
-
         for x in x0..x1 {
             for y in y0..y1 {
                 for z in z0..z1 {
-                    if let Some(tile) = tiles.get(&self.get_tile(x, y, z)) {
-                        aabbs.push(tile.read().unwrap().get_aabb(x, y, z));
+                    if let Some(tile) = get_tile(self.get_tile(x, y, z)) {
+                        aabbs.push(tile.get_aabb(x, y, z));
                     }
                 }
             }
@@ -273,12 +268,9 @@ impl Level {
     }
 
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        let binding = get_tiles();
-        let tile = binding.get(&self.get_tile(x, y, z));
-        if let Some(t) = tile {
-            return t.read().unwrap().is_solid();
-        }
-        false
+        get_tile(self.get_tile(x, y, z))
+            .map(|tile| tile.is_solid())
+            .unwrap_or(false)
     }
 
     pub fn tick(&mut self) {
@@ -301,8 +293,8 @@ impl Level {
             };
             let tile_id = self.get_tile(x, y, z);
 
-            if let Some(tile) = get_tiles().get(&tile_id) {
-                tile.write().unwrap().tick(self, x, y, z);
+            if let Some(tile) = get_tile_mut(tile_id) {
+                tile.tick(self, x, y, z);
             }
         }
     }
