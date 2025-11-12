@@ -7,7 +7,7 @@ use crate::{
     java::{JBoolean, JInt},
     level::{level::Level, tesselator::Tesselator},
     phys::aabb::AABB,
-    traits::TickableTile,
+    traits::{TickableTile, TileDestructionEvent},
 };
 
 pub struct Tile {
@@ -247,4 +247,8 @@ impl Tile {
 
 impl TickableTile for Tile {
     fn tick(&mut self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
+}
+
+impl TileDestructionEvent for Tile {
+    fn destroy(&mut self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
 }
