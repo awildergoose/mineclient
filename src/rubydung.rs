@@ -12,10 +12,9 @@ use crate::{
         init_display, is_display_close_requested, is_key_down, is_mouse_button_down,
         update_display,
     },
-    level::{
-        chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile_mut,
-    },
+    level::{chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile},
     player::Player,
+    textures,
     timer::Timer,
     traits::{Drawable, Tickable, TileDestructionEvent},
 };
@@ -317,7 +316,7 @@ impl RubyDung {
         {
             let binding = self.level.as_mut().unwrap();
             let mut level = binding.borrow_mut();
-            let mut old_tile = get_tile_mut(level.get_tile(hit.x, hit.y, hit.z));
+            let mut old_tile = get_tile(level.get_tile(hit.x, hit.y, hit.z));
             let changed = level.set_tile(hit.x, hit.y, hit.z, 0);
 
             if let Some(otile) = old_tile.as_mut()
@@ -411,13 +410,73 @@ impl RubyDung {
                     .render_hit(hit);
                 gl::Enable(3008);
             }
-
-            // TODO draw gui
-            update_display();
         }
+
+        self.draw_gui(a);
+        update_display();
     }
 
-    // TODO drawGui
+    fn draw_gui(&mut self, _a: JFloat) {
+        // TODO gl constants
+        let binding = self.level_renderer.as_mut().unwrap().borrow();
+        let mut t = binding.t.borrow_mut();
+        let screen_width = self.width * 240 / self.height;
+        let screen_height = self.height * 240 / self.height;
+
+        unsafe {
+            gl::Clear(256);
+            gl::MatrixMode(5889);
+            gl::LoadIdentity();
+            gl::Ortho(
+                0.0,
+                screen_width.into(),
+                screen_height.into(),
+                0.0,
+                100.0,
+                300.0,
+            );
+            gl::MatrixMode(5888);
+            gl::LoadIdentity();
+            gl::Translatef(0.0, 0.0, -200.0);
+            gl::PushMatrix();
+            gl::Translatef((screen_width - 16) as f32, 16.0, 0.0);
+            gl::Scalef(16.0, 16.0, 16.0);
+            gl::Rotatef(30.0, 1.0, 0.0, 0.0);
+            gl::Rotatef(45.0, 0.0, 1.0, 0.0);
+            gl::Translatef(-1.5, 0.5, -0.5);
+            gl::Scalef(-1.0, -1.0, 1.0);
+            let id = textures::load_2d_texture("terrain.png");
+            gl::BindTexture(3553, id);
+            gl::Enable(3553);
+            t.init();
+            get_tile(self.paint_texture).unwrap().render(
+                &mut t,
+                &self.level.as_ref().unwrap().borrow(),
+                0,
+                -2,
+                0,
+                0,
+            );
+            t.flush();
+            gl::Disable(3553);
+            gl::PopMatrix();
+            gl::Color4f(1.0, 1.0, 1.0, 1.0);
+        }
+
+        let wc = (screen_width / 2) as f32;
+        let hc = (screen_height / 2) as f32;
+
+        t.init();
+        t.vertex(wc + 1.0, hc - 4.0, 0.0);
+        t.vertex(wc - 0.0, hc - 4.0, 0.0);
+        t.vertex(wc - 0.0, hc + 5.0, 0.0);
+        t.vertex(wc + 1.0, hc + 5.0, 0.0);
+        t.vertex(wc + 5.0, hc - 0.0, 0.0);
+        t.vertex(wc - 4.0, hc - 0.0, 0.0);
+        t.vertex(wc - 4.0, hc + 1.0, 0.0);
+        t.vertex(wc + 5.0, hc + 1.0, 0.0);
+        t.flush();
+    }
 
     fn setup_fog(&mut self, i: JInt) {
         unsafe {

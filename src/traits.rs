@@ -20,10 +20,10 @@ pub trait TimelessDrawable {
 }
 
 pub trait TickableTile {
-    fn tick(&mut self, level: &mut Level, x: JInt, y: JInt, z: JInt); // omitted random because it's in level
+    fn tick(&self, level: &mut Level, x: JInt, y: JInt, z: JInt); // omitted random because it's in level
 }
 
 pub trait TileDestructionEvent {
     // TODO add particle engine arg
-    fn destroy(&mut self, level: &mut Level, x: JInt, y: JInt, z: JInt);
+    fn destroy(&self, level: &mut Level, x: JInt, y: JInt, z: JInt);
 }

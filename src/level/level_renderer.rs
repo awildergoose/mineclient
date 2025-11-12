@@ -31,7 +31,7 @@ pub struct LevelRenderer {
     x_chunks: JInt,
     y_chunks: JInt,
     z_chunks: JInt,
-    t: Rc<RefCell<Tesselator>>,
+    pub t: Rc<RefCell<Tesselator>>,
 }
 
 impl LevelRenderer {

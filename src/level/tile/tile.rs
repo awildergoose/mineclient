@@ -1,11 +1,10 @@
-use std::sync::OnceLock;
-
 use crate::{
     java::{JBoolean, JInt},
     level::{level::Level, tesselator::Tesselator},
     phys::aabb::AABB,
     traits::{TickableTile, TileDestructionEvent},
 };
+use phf::phf_map;
 
 #[derive(Debug)]
 pub struct Tile {
@@ -13,35 +12,18 @@ pub struct Tile {
     pub id: JInt,
 }
 
-static mut TILES: OnceLock<Vec<Tile>> = OnceLock::new();
+// albeit ugly, it's very fast
+static TILE_MAP: phf::Map<i32, &'static Tile> = phf_map! {
+    1 => &Tile::ROCK,
+    2 => &Tile::GRASS,
+    3 => &Tile::DIRT,
+    4 => &Tile::STONE_BRICK,
+    5 => &Tile::WOOD,
+    6 => &Tile::BUSH,
+};
 
-fn init_tiles() -> Vec<Tile> {
-    vec![
-        Tile::ROCK,
-        Tile::GRASS,
-        Tile::DIRT,
-        Tile::STONE_BRICK,
-        Tile::WOOD,
-        Tile::BUSH,
-    ]
-}
-
-#[allow(static_mut_refs)]
-pub fn get_tiles() -> &'static mut Vec<Tile> {
-    unsafe {
-        if TILES.get().is_none() {
-            TILES.set(init_tiles()).unwrap();
-        }
-        TILES.get_mut().unwrap()
-    }
-}
-
-pub fn get_tile(id: JInt) -> Option<&'static Tile> {
-    get_tiles().iter().find(|t| t.id == id)
-}
-
-pub fn get_tile_mut(id: JInt) -> Option<&'static mut Tile> {
-    get_tiles().iter_mut().find(|t| t.id == id)
+pub fn get_tile(id: i32) -> Option<&'static Tile> {
+    TILE_MAP.get(&id).copied()
 }
 
 impl Tile {
@@ -258,9 +240,9 @@ impl Tile {
 }
 
 impl TickableTile for Tile {
-    fn tick(&mut self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
+    fn tick(&self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
 }
 
 impl TileDestructionEvent for Tile {
-    fn destroy(&mut self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
+    fn destroy(&self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
 }

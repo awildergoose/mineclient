@@ -9,7 +9,7 @@ use crate::{
     level::{
         level_listener::LevelListener,
         perlin_noise_filter::PerlinNoiseFilter,
-        tile::tile::{Tile, get_tile, get_tile_mut},
+        tile::tile::{Tile, get_tile},
     },
     phys::aabb::AABB,
     traits::TickableTile,
@@ -293,7 +293,7 @@ impl Level {
             };
             let tile_id = self.get_tile(x, y, z);
 
-            if let Some(tile) = get_tile_mut(tile_id) {
+            if let Some(tile) = get_tile(tile_id) {
                 tile.tick(self, x, y, z);
             }
         }
