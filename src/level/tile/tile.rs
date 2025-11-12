@@ -111,7 +111,7 @@ impl Tile {
         let tex = self.get_texture(face);
         let u0 = ((tex % 16) / 16) as f32; // TODO verify this cast
         let u1 = u0 + 0.0624375;
-        let v0 = tex as f32 / 16.0 / 16.0;
+        let v0 = (tex / 16) as f32 / 16.0;
         let v1 = v0 + 0.0624375;
         let x0 = x as f32;
         let x1 = x as f32 + 1.0;
