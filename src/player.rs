@@ -72,7 +72,7 @@ impl Tickable for Player {
 
         self.base
             .move_relative(xa, ya, if self.base.on_ground { 0.1 } else { 0.02 });
-        self.base.yd -= 0.008;
+        self.base.yd -= 0.08;
         self.base.move_(self.base.xd, self.base.yd, self.base.zd);
         self.base.xd *= 0.91;
         self.base.yd *= 0.98;
