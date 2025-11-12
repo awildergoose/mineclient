@@ -5,7 +5,10 @@ use std::io::Write;
 
 use crate::{
     java::{JBoolean, JByte, JFloat, JInt},
-    level::{level_listener::LevelListener, tile::tile::Tile},
+    level::{
+        level_listener::LevelListener,
+        tile::tile::{Tile, get_tiles},
+    },
     phys::aabb::AABB,
 };
 
@@ -188,18 +191,13 @@ impl Level {
             z1 = self.height;
         }
 
+        let tiles = get_tiles().lock().unwrap();
+
         for x in x0..x1 {
             for y in y0..y1 {
                 for z in z0..z1 {
-                    if self.is_solid_tile(x, y, z) {
-                        aabbs.push(AABB::new(
-                            x as f32,
-                            y as f32,
-                            z as f32,
-                            (x + 1) as f32,
-                            (y + 1) as f32,
-                            (z + 1) as f32,
-                        ));
+                    if let Some(tile) = tiles.get(&self.get_tile(x, y, z)) {
+                        aabbs.push(tile.get_aabb(x, y, z));
                     }
                 }
             }
@@ -225,16 +223,25 @@ impl Level {
         }
     }
 
-    pub fn set_tile(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) {
+    pub fn set_tile(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) -> JBoolean {
+        let width = self.width;
+        let height = self.height;
+
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            let width = self.width;
-            let height = self.height;
+            if type_ == self.blocks[((y * self.height + z) * self.width + x) as usize] as JInt {
+                false
+            } else {
+                self.blocks[((y * height + z) * width + x) as usize] = type_ as JByte;
+                self.calc_light_depths(x, z, 1, 1);
 
-            self.blocks[((y * height + z) * width + x) as usize] = type_ as JByte;
+                for ele in &self.level_listeners {
+                    ele.tile_changed(x, y, z);
+                }
 
-            for ele in &self.level_listeners {
-                ele.tile_changed(x, y, z);
+                true
             }
+        } else {
+            false
         }
     }
 
