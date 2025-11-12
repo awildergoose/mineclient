@@ -14,6 +14,7 @@ use crate::{
     level::{chunk, level::Level, level_renderer::LevelRenderer},
     player::Player,
     timer::Timer,
+    traits::Tickable,
 };
 
 unsafe extern "C" {

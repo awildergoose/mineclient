@@ -4,11 +4,12 @@ use crate::{
     java::{JBoolean, JFloat, math_random},
     level::level::Level,
     phys::aabb::AABB,
+    traits::Tickable,
 };
 
 pub struct Entity {
     level: Rc<RefCell<Level>>,
-    height_offset: JFloat,
+    pub height_offset: JFloat,
     pub xo: JFloat,
     pub yo: JFloat,
     pub zo: JFloat,
@@ -49,7 +50,7 @@ impl Entity {
         this
     }
 
-    fn reset_pos(&mut self) {
+    pub fn reset_pos(&mut self) {
         let x = math_random() * self.level.borrow().width as f32;
         let y = self.level.borrow().depth as f32 + 10.0;
         let z = math_random() * self.level.borrow().height as f32;
@@ -69,12 +70,6 @@ impl Entity {
         self.y_rot += xo * 0.15;
         self.x_rot -= yo * 0.15;
         self.x_rot = self.x_rot.clamp(-90.0, 90.0);
-    }
-
-    pub fn tick(&mut self) {
-        self.xo = self.x;
-        self.yo = self.y;
-        self.zo = self.z;
     }
 
     pub fn move_(&mut self, mut xa: JFloat, mut ya: JFloat, mut za: JFloat) {
@@ -129,5 +124,13 @@ impl Entity {
             self.xd += xa * cos - za * sin;
             self.zd += za * cos + xa * sin;
         }
+    }
+}
+
+impl Tickable for Entity {
+    fn tick(&mut self) {
+        self.xo = self.x;
+        self.yo = self.y;
+        self.zo = self.z;
     }
 }

@@ -6,6 +6,8 @@
 -   character/Cube
 -   level/Chunk
 -   Textures
+-   Entity
+-   Player
 
 # partial
 
@@ -13,7 +15,5 @@
 
 # incomplete
 
--   Entity
--   Player
 -   RubyDung
 -   character/Zombie

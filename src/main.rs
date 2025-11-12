@@ -13,6 +13,7 @@ pub mod player;
 pub mod rubydung;
 pub mod textures;
 pub mod timer;
+pub mod traits;
 
 fn main() {
     let mut rd = RubyDung::default();
