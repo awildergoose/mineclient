@@ -3,6 +3,7 @@
 use crate::rubydung::RubyDung;
 
 pub mod character;
+pub mod entity;
 pub mod gl;
 pub mod hit_result;
 pub mod java;
