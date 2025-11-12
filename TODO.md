@@ -5,6 +5,7 @@
 -   character/Zombie
 -   character/ZombieModel
 -   Textures
+-   HitResult
 
 # partial
 
@@ -26,5 +27,4 @@
 -   level/Tesselator
 -   particle/Particle
 -   particle/ParticleEngine
--   HitResult
 -   Player

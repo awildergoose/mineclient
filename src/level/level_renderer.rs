@@ -178,7 +178,7 @@ impl LevelRenderer {
                             }
 
                             t.init();
-                            tile.render_face_no_texture(&mut *t, x, y, z, i as i32);
+                            tile.render_face_no_texture(&mut t, x, y, z, i as i32);
                             t.flush();
                         }
 
