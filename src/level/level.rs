@@ -5,8 +5,12 @@ use javarandom::JavaRandom;
 use std::io::Write;
 
 use crate::{
-    java::{JBoolean, JByte, JFloat, JInt},
-    level::{level_listener::LevelListener, tile::tile::get_tiles},
+    java::{JBoolean, JByte, JInt},
+    level::{
+        level_listener::LevelListener,
+        perlin_noise_filter::PerlinNoiseFilter,
+        tile::tile::{Tile, get_tiles},
+    },
     phys::aabb::AABB,
 };
 
@@ -49,28 +53,50 @@ impl Level {
     }
 
     fn generate_map(&mut self) {
-        // TODO stub
-    }
+        let w = self.width;
+        let h = self.height;
+        let d = self.depth;
+        let heightmap1 = PerlinNoiseFilter::new(self.random.clone(), 0).read(w, h);
+        let heightmap2 = PerlinNoiseFilter::new(self.random.clone(), 0).read(w, h);
+        let cf = PerlinNoiseFilter::new(self.random.clone(), 1).read(w, h);
+        let rock_map = PerlinNoiseFilter::new(self.random.clone(), 1).read(w, h);
 
-    pub fn calc_light_depths(&mut self, x0: JInt, y0: JInt, x1: JInt, y1: JInt) {
-        for x in x0..x0 + x1 {
-            for z in y0..y0 + y1 {
-                let old_depth = self.light_depths[(x + z * self.width) as usize];
-                let mut y = self.depth - 1;
-
-                while y > 0 && !self.is_light_blocker(x, y, z) {
-                    y -= 1;
-                }
-
-                self.light_depths[(x + z * self.width) as usize] = y;
-
-                if old_depth != y {
-                    let yl0 = if old_depth < y { old_depth } else { y };
-                    let yl1 = if old_depth > y { old_depth } else { y };
-
-                    for l in &self.level_listeners {
-                        l.light_column_changed(x, z, yl0, yl1);
+        for x in 0..w {
+            for y in 0..d {
+                for z in 0..h {
+                    let dh1 = heightmap1[(x + z * self.width) as usize];
+                    let mut dh2 = heightmap2[(x + z * self.width) as usize];
+                    let cfh = cf[(x + z * self.width) as usize];
+                    if cfh < 128 {
+                        dh2 = dh1;
                     }
+
+                    let mut dh = dh1;
+                    if dh2 > dh1 {
+                        dh = dh2;
+                    }
+
+                    dh = dh / 8 + d / 3;
+                    let mut rh = rock_map[(x + z * self.width) as usize] / 8 + d / 3;
+                    if rh > dh - 2 {
+                        rh = dh - 2;
+                    }
+
+                    let i = (y * self.height + z) * self.width + x;
+                    let mut id = 0;
+                    if y == dh {
+                        id = Tile::GRASS.id;
+                    }
+
+                    if y < dh {
+                        id = Tile::DIRT.id;
+                    }
+
+                    if y <= rh {
+                        id = Tile::ROCK.id;
+                    }
+
+                    self.blocks[i as usize] = id as i8;
                 }
             }
         }
@@ -108,6 +134,30 @@ impl Level {
         Ok(())
     }
 
+    pub fn calc_light_depths(&mut self, x0: JInt, y0: JInt, x1: JInt, y1: JInt) {
+        for x in x0..x0 + x1 {
+            for z in y0..y0 + y1 {
+                let old_depth = self.light_depths[(x + z * self.width) as usize];
+                let mut y = self.depth - 1;
+
+                while y > 0 && !self.is_light_blocker(x, y, z) {
+                    y -= 1;
+                }
+
+                self.light_depths[(x + z * self.width) as usize] = y;
+
+                if old_depth != y {
+                    let yl0 = if old_depth < y { old_depth } else { y };
+                    let yl1 = if old_depth > y { old_depth } else { y };
+
+                    for l in &self.level_listeners {
+                        l.light_column_changed(x, z, yl0, yl1);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn add_listener(&mut self, level_listener: Box<dyn LevelListener>) {
         self.level_listeners.push(level_listener);
     }
@@ -120,37 +170,6 @@ impl Level {
         {
             self.level_listeners.remove(pos);
         }
-    }
-
-    pub fn is_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        if x >= 0 && y >= 0 && z >= 0 {
-            let width = self.width;
-            let height = self.height;
-            let depth = self.depth;
-
-            if x < width && y < depth && z < height {
-                let idx = (y * height + z) * width + x;
-                return self.blocks[idx as usize] == 1;
-            }
-        }
-        false
-    }
-
-    pub fn is_lit(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
-            true
-        } else {
-            y >= self.light_depths[(x + z * self.width) as usize]
-        }
-    }
-
-    pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        let binding = get_tiles().lock().unwrap();
-        let tile = binding.get(&self.get_tile(x, y, z));
-        if let Some(t) = tile {
-            return t.is_solid();
-        }
-        false
     }
 
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
@@ -210,23 +229,6 @@ impl Level {
         aabbs
     }
 
-    pub fn get_brightness(&self, x: JInt, y: JInt, z: JInt) -> JFloat {
-        let dark = 0.8;
-        let light = 1.0;
-
-        if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
-            light
-        } else {
-            let width = self.width;
-
-            if y < self.light_depths[(x + z * width) as usize] {
-                dark
-            } else {
-                light
-            }
-        }
-    }
-
     pub fn set_tile(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) -> JBoolean {
         let width = self.width;
         let height = self.height;
@@ -249,6 +251,14 @@ impl Level {
         }
     }
 
+    pub fn is_lit(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
+        if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
+            true
+        } else {
+            y >= self.light_depths[(x + z * self.width) as usize]
+        }
+    }
+
     pub fn get_tile(&self, x: JInt, y: JInt, z: JInt) -> JInt {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
             self.blocks[((y * self.height + z) * self.width + x) as usize] as JInt
@@ -256,4 +266,15 @@ impl Level {
             0
         }
     }
+
+    pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
+        let binding = get_tiles().lock().unwrap();
+        let tile = binding.get(&self.get_tile(x, y, z));
+        if let Some(t) = tile {
+            return t.is_solid();
+        }
+        false
+    }
+
+    pub fn tick(&mut self) {}
 }
