@@ -51,7 +51,6 @@ impl Player {
         let x = math_random() * self.level.borrow().width as f32;
         let y = self.level.borrow().depth as f32 + 10.0;
         let z = math_random() * self.level.borrow().height as f32;
-        eprintln!("RESET_POS -> x={} y={} z={}", x, y, z);
         self.set_pos(x, y, z);
     }
 
