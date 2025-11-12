@@ -109,7 +109,7 @@ impl Tile {
 
     pub fn render_face(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let tex = self.get_texture(face);
-        let u0 = ((tex % 16) / 16) as f32; // TODO verify this cast
+        let u0 = (tex % 16) as f32 / 16.0;
         let u1 = u0 + 0.0624375;
         let v0 = (tex / 16) as f32 / 16.0;
         let v1 = v0 + 0.0624375;
