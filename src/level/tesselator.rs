@@ -46,7 +46,7 @@ impl Tesselator {
                 gl::InterleavedArrays(10794, 0, buffer);
             } else if self.has_texture {
                 gl::InterleavedArrays(10791, 0, buffer);
-            } else if (self.has_color) {
+            } else if self.has_color {
                 gl::InterleavedArrays(10788, 0, buffer);
             } else {
                 gl::InterleavedArrays(10785, 0, buffer);

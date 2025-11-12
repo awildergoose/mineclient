@@ -1,4 +1,7 @@
-use std::sync::{Mutex, OnceLock};
+use std::{
+    collections::HashMap,
+    sync::{Mutex, OnceLock},
+};
 
 use crate::{
     java::{JBoolean, JInt},
@@ -11,16 +14,21 @@ pub struct Tile {
     id: JInt,
 }
 
-static TILES: OnceLock<Mutex<Vec<Tile>>> = OnceLock::new();
+static TILES: OnceLock<Mutex<HashMap<JInt, Tile>>> = OnceLock::new();
 
-pub fn get_tiles() -> &'static Mutex<Vec<Tile>> {
-    TILES.get_or_init(|| Mutex::new(Vec::new()))
-}
-
-pub fn init_tiles() {
-    let mut tiles = get_tiles().lock().unwrap();
-    tiles.push(Tile::ROCK);
-    tiles.push(Tile::GRASS);
+pub fn get_tiles() -> &'static Mutex<HashMap<JInt, Tile>> {
+    TILES.get_or_init(|| {
+        Mutex::new({
+            let mut tiles = HashMap::new();
+            tiles.insert(Tile::ROCK.id, Tile::ROCK);
+            tiles.insert(Tile::GRASS.id, Tile::GRASS);
+            tiles.insert(Tile::DIRT.id, Tile::DIRT);
+            tiles.insert(Tile::STONE_BRICK.id, Tile::STONE_BRICK);
+            tiles.insert(Tile::WOOD.id, Tile::WOOD);
+            tiles.insert(Tile::BUSH.id, Tile::BUSH);
+            tiles
+        })
+    })
 }
 
 impl Tile {

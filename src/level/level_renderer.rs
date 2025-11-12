@@ -121,13 +121,19 @@ impl LevelRenderer {
         }
     }
 
-    pub fn update_dirty_chunks(&mut self, _player: &Player) {
-        // TODO sort
-        for c in self
-            .get_all_dirty_chunks()
-            .into_iter()
-            .take(MAX_REBUILDS_PER_FRAME as usize)
-        {
+    pub fn update_dirty_chunks(&mut self, player: &Player) {
+        let mut dirty = self.get_all_dirty_chunks();
+        if dirty.is_empty() {
+            return;
+        }
+
+        dirty.sort_by(|a, b| {
+            let da = a.distance_to_sqr(player);
+            let db = b.distance_to_sqr(player);
+            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        for c in dirty.into_iter().take(MAX_REBUILDS_PER_FRAME as usize) {
             c.rebuild_all();
         }
     }
@@ -164,7 +170,7 @@ impl LevelRenderer {
                     if let Some(tile) = get_tiles()
                         .lock()
                         .unwrap()
-                        .get(self.level.borrow_mut().get_tile(x, y, z) as usize)
+                        .get(&self.level.borrow_mut().get_tile(x, y, z))
                         && frustum.is_visible(&tile.get_tile_aabb(x, y, z))
                     {
                         unsafe {

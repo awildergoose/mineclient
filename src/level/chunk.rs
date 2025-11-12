@@ -6,11 +6,10 @@ use std::{
 
 use crate::{
     gl,
-    java::{JBoolean, JFloat, JInt, JLong, get_milli_time},
-    level::{level::Level, tesselator::Tesselator, tile::tile::Tile},
+    java::{JBoolean, JFloat, JInt, JLong, get_milli_time, get_nano_time},
+    level::{level::Level, tesselator::Tesselator, tile::tile::get_tiles},
     phys::aabb::AABB,
     player::Player,
-    textures,
 };
 
 pub static UPDATES: AtomicI32 = AtomicI32::new(0);
@@ -79,36 +78,30 @@ impl Chunk {
     }
 
     pub fn rebuild(&mut self, layer: u32) {
-        // TODO check what changed here
         self.dirty = false;
         UPDATES.fetch_add(1, Ordering::SeqCst);
 
-        let tex_id = textures::load_2d_texture("terrain.png");
-
-        unsafe {
-            gl::NewList(self.lists + layer, gl::COMPILE);
-            gl::Enable(gl::TEXTURE_2D);
-            gl::BindTexture(gl::TEXTURE_2D, tex_id);
-        }
-
+        let before = get_nano_time();
+        unsafe { gl::NewList(self.lists + layer, gl::COMPILE) }
         let mut t = self.t.borrow_mut();
         t.init();
+
+        let mut tiles = 0;
 
         for x in self.x0..self.x1 {
             for y in self.y0..self.y1 {
                 for z in self.z0..self.z1 {
-                    if self.level.borrow().is_tile(x, y, z) {
-                        let tex = if y == self.level.borrow().depth * 2 / 3 {
-                            0
-                        } else {
-                            1
-                        };
-
-                        if tex == 0 {
-                            Tile::ROCK.render(&mut t, &self.level.borrow(), layer as i32, x, y, z);
-                        } else {
-                            Tile::GRASS.render(&mut t, &self.level.borrow(), layer as i32, x, y, z);
-                        }
+                    let tile_id = self.level.borrow().get_tile(x, y, z);
+                    if tile_id > 0 {
+                        get_tiles().lock().unwrap().get(&tile_id).unwrap().render(
+                            &mut t,
+                            &self.level.borrow_mut(),
+                            layer as i32,
+                            x,
+                            y,
+                            z,
+                        );
+                        tiles += 1;
                     }
                 }
             }
@@ -117,8 +110,13 @@ impl Chunk {
         t.flush();
 
         unsafe {
-            gl::Disable(gl::TEXTURE_2D);
             gl::EndList();
+        }
+
+        let after = get_nano_time();
+        if tiles > 0 {
+            TOTAL_TIME.fetch_add(after - before, Ordering::SeqCst);
+            TOTAL_UPDATES.fetch_add(1, Ordering::SeqCst);
         }
     }
 
@@ -138,7 +136,7 @@ impl Chunk {
         self.dirty
     }
 
-    pub fn distance_to_sqr(&self, player: Player) -> JFloat {
+    pub fn distance_to_sqr(&self, player: &Player) -> JFloat {
         let xd = player.x - self.x;
         let yd = player.y - self.y;
         let zd = player.z - self.z;
