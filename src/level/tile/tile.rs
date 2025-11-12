@@ -11,7 +11,7 @@ use crate::{
 
 pub struct Tile {
     tex: JInt,
-    id: JInt,
+    pub id: JInt,
 }
 
 static TILES: OnceLock<Mutex<HashMap<JInt, Tile>>> = OnceLock::new();

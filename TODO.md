@@ -4,11 +4,15 @@
 -   character/Polygon
 -   character/Zombie
 -   character/ZombieModel
+-   level/Frustum
+-   level/DirtyChunkSorter
 -   Textures
 -   HitResult
+-   MinecraftApplet
 
 # partial
 
+-   level/Tesselator (needs a look again for optimization)
 -   level/Level
 -   Entity
 -   RubyDung
@@ -20,11 +24,8 @@
 -   level/tile/GrassTile
 -   level/tile/Tile
 -   level/Chunk
--   level/DirtyChunkSorter
--   level/Frustum
 -   level/LevelRenderer
 -   level/PerlinNoiseFilter
--   level/Tesselator
 -   particle/Particle
 -   particle/ParticleEngine
 -   Player

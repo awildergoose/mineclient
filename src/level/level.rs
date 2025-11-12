@@ -5,7 +5,7 @@ use std::io::Write;
 
 use crate::{
     java::{JBoolean, JByte, JFloat, JInt},
-    level::level_listener::LevelListener,
+    level::{level_listener::LevelListener, tile::tile::Tile},
     phys::aabb::AABB,
 };
 
@@ -31,7 +31,7 @@ impl Level {
             for y in 0..d {
                 for z in 0..h {
                     let i = (y * h + z) * w + x;
-                    blocks[i] = if y <= d * 2 / 3 { 1 } else { 0 };
+                    blocks[i] = if y <= d * 2 / 3 { Tile::ROCK.id } else { 0 } as i8;
                 }
             }
         }

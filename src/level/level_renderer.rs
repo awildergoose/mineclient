@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    cmp::Ordering,
     rc::{Rc, Weak},
 };
 
@@ -121,16 +122,39 @@ impl LevelRenderer {
         }
     }
 
-    pub fn update_dirty_chunks(&mut self, player: &Player) {
+    pub fn update_dirty_chunks(&mut self, frustum: &Frustum, player: &Player) {
         let mut dirty = self.get_all_dirty_chunks();
         if dirty.is_empty() {
             return;
         }
 
-        dirty.sort_by(|a, b| {
-            let da = a.distance_to_sqr(player);
-            let db = b.distance_to_sqr(player);
-            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+        let now = get_milli_time();
+
+        dirty.sort_by(|c0, c1| {
+            let i0 = frustum.is_visible(&c0.aabb);
+            let i1 = frustum.is_visible(&c1.aabb);
+
+            if i0 && !i1 {
+                return Ordering::Less;
+            } else if i1 && !i0 {
+                return Ordering::Greater;
+            }
+
+            let t0 = ((now - c0.dirtied_time) / 2000) as i32;
+            let t1 = ((now - c1.dirtied_time) / 2000) as i32;
+            if t0 < t1 {
+                return Ordering::Less;
+            } else if t0 > t1 {
+                return Ordering::Greater;
+            }
+
+            let d0 = c0.distance_to_sqr(player);
+            let d1 = c1.distance_to_sqr(player);
+            if d0 < d1 {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
         });
 
         for c in dirty.into_iter().take(MAX_REBUILDS_PER_FRAME as usize) {

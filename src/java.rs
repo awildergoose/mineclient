@@ -28,7 +28,12 @@ pub fn get_nano_time() -> JLong {
 }
 
 pub fn get_milli_time() -> JLong {
-    START_INSTANT.elapsed().as_micros() as i64 / 1000
+    let ms = START_INSTANT.elapsed().as_millis();
+    if ms <= i64::MAX as u128 {
+        ms as i64
+    } else {
+        (ms % (i64::MAX as u128 + 1)) as i64
+    }
 }
 
 pub fn math_random() -> JFloat {

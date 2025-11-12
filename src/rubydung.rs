@@ -238,7 +238,6 @@ impl RubyDung {
             gl::RenderMode(gl::SELECT);
         }
         self.setup_pick_camera(a, (self.width / 2) as f32, (self.height / 2) as f32);
-        // TODO pass frustum
         let frustum = frustum::get_frustum().lock().unwrap();
         self.level_renderer
             .as_mut()
@@ -348,7 +347,7 @@ impl RubyDung {
                 .as_mut()
                 .unwrap()
                 .borrow_mut()
-                .update_dirty_chunks(self.player.as_ref().unwrap());
+                .update_dirty_chunks(&frustum.lock().unwrap(), self.player.as_ref().unwrap());
             self.setup_fog(0);
             gl::Enable(2912);
             self.level_renderer
