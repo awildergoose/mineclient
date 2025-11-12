@@ -112,40 +112,40 @@ impl Tesselator {
     }
 
     pub fn vertex(&mut self, x: JFloat, y: JFloat, z: JFloat) {
-        if self.has_texture {
-            let p = self.advance();
-            self.buffer[p] = self.u;
-            let p = self.advance();
-            self.buffer[p] = self.v;
+        let mut p = self.p;
+        unsafe {
+            let ptr = self.buffer.as_mut_ptr();
+
+            if self.has_texture {
+                *ptr.add(p) = self.u;
+                p += 1;
+                *ptr.add(p) = self.v;
+                p += 1;
+            }
+
+            if self.has_color {
+                *ptr.add(p) = self.r;
+                p += 1;
+                *ptr.add(p) = self.g;
+                p += 1;
+                *ptr.add(p) = self.b;
+                p += 1;
+            }
+
+            *ptr.add(p) = x;
+            p += 1;
+            *ptr.add(p) = y;
+            p += 1;
+            *ptr.add(p) = z;
+            p += 1;
         }
 
-        if self.has_color {
-            let p = self.advance();
-            self.buffer[p] = self.r;
-            let p = self.advance();
-            self.buffer[p] = self.g;
-            let p = self.advance();
-            self.buffer[p] = self.b;
-        }
-
-        let p = self.advance();
-        self.buffer[p] = x;
-        let p = self.advance();
-        self.buffer[p] = y;
-        let p = self.advance();
-        self.buffer[p] = z;
+        self.p = p;
         self.vertices += 1;
 
         if self.vertices % 4 == 0 && self.p >= MAX_FLOATS - self.len * 4 {
             self.flush();
         }
-    }
-
-    #[inline]
-    fn advance(&mut self) -> usize {
-        let old = self.p;
-        self.p += 1;
-        old
     }
 }
 
