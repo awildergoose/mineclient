@@ -8,6 +8,7 @@ pub mod gl;
 pub mod hit_result;
 pub mod java;
 pub mod level;
+pub mod particle;
 pub mod phys;
 pub mod player;
 pub mod rubydung;
