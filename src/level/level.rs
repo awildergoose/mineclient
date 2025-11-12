@@ -1,14 +1,12 @@
 use std::{fs::File, io::Read};
 
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
+use javarandom::JavaRandom;
 use std::io::Write;
 
 use crate::{
     java::{JBoolean, JByte, JFloat, JInt},
-    level::{
-        level_listener::LevelListener,
-        tile::tile::{Tile, get_tiles},
-    },
+    level::{level_listener::LevelListener, tile::tile::get_tiles},
     phys::aabb::AABB,
 };
 
@@ -19,6 +17,8 @@ pub struct Level {
     blocks: Vec<JByte>,
     light_depths: Vec<JInt>,
     level_listeners: Vec<Box<dyn LevelListener>>,
+    random: JavaRandom,
+    unprocessed: JInt,
 }
 
 impl Level {
@@ -27,33 +27,29 @@ impl Level {
         let h: usize = h as usize;
         let d: usize = d as usize;
 
-        let mut blocks = vec![0i8; w * h * d];
-        let light_depths = vec![0i32; w * h];
-
-        for x in 0..w {
-            for y in 0..d {
-                for z in 0..h {
-                    let i = (y * h + z) * w + x;
-                    blocks[i] = if y <= d * 2 / 3 { Tile::ROCK.id } else { 0 } as i8;
-                }
-            }
-        }
-
         let mut this = Self {
             width: w as JInt,
             height: h as JInt,
             depth: d as JInt,
-            blocks,
+            blocks: vec![0i8; w * h * d],
+            light_depths: vec![0i32; w * h],
             level_listeners: Vec::new(),
-            light_depths,
+            random: JavaRandom::with_seed(69),
+            unprocessed: 0,
         };
 
-        this.calc_light_depths(0, 0, w as JInt, h as JInt);
         if let Err(err) = this.load() {
             eprintln!("failed to load level: {:?}", err);
+            this.generate_map();
         }
 
+        this.calc_light_depths(0, 0, w as JInt, h as JInt);
+
         this
+    }
+
+    fn generate_map(&mut self) {
+        // TODO stub
     }
 
     pub fn calc_light_depths(&mut self, x0: JInt, y0: JInt, x1: JInt, y1: JInt) {
@@ -90,8 +86,6 @@ impl Level {
         };
 
         decoder.read_exact(u8_slice)?;
-
-        self.calc_light_depths(0, 0, self.width, self.height);
 
         for listener in &self.level_listeners {
             listener.all_changed();
