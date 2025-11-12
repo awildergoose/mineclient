@@ -50,6 +50,7 @@ pub struct RubyDung {
     select_buffer: [i32; 2000],
     hit_result: Option<HitResult>,
     zombies: Vec<Zombie>,
+    paint_texture: JInt,
 }
 
 impl RubyDung {
@@ -67,6 +68,7 @@ impl RubyDung {
             select_buffer: [0; 2000],
             hit_result: None,
             zombies: Vec::new(),
+            paint_texture: 1,
         }
     }
 
@@ -170,7 +172,26 @@ impl RubyDung {
 
     pub fn tick(&mut self) {
         // TODO handle keyboard events here
-        // TODO tick level and particle engine
+        if is_key_down(glfw::Key::Enter) {
+            if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
+                eprintln!("failed to save level: {:?}", err);
+            }
+        } else if is_key_down(glfw::Key::Num1) {
+            self.paint_texture = 1;
+        } else if is_key_down(glfw::Key::Num2) {
+            self.paint_texture = 2;
+        } else if is_key_down(glfw::Key::Num3) {
+            self.paint_texture = 3;
+        } else if is_key_down(glfw::Key::Num4) {
+            self.paint_texture = 4;
+        } else if is_key_down(glfw::Key::Num5) {
+            self.paint_texture = 5;
+        } else if is_key_down(glfw::Key::Num6) {
+            self.paint_texture = 6;
+        }
+
+        // TODO tick particle engine
+        self.level.as_mut().unwrap().borrow_mut().tick();
 
         self.zombies.iter_mut().for_each(|z| z.tick());
         self.zombies.retain(|z| !z.removed);
@@ -330,12 +351,12 @@ impl RubyDung {
                 x += 1;
             }
 
-            // TODO use paint texture here
+            let paint_texture = self.paint_texture;
             self.level
                 .as_mut()
                 .unwrap()
                 .borrow_mut()
-                .set_tile(x, y, z, 1);
+                .set_tile(x, y, z, paint_texture);
         }
 
         unsafe {

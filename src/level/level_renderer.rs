@@ -224,8 +224,12 @@ impl LevelRenderer {
 
             unsafe {
                 gl::PopName();
-                gl::PopName();
             }
+        }
+
+        unsafe {
+            gl::PopName();
+            gl::PopName();
         }
     }
 

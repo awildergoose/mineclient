@@ -161,8 +161,6 @@ impl Level {
                 }
             }
         }
-
-        println!("Calculated light depths");
     }
 
     pub fn add_listener(&mut self, level_listener: Box<dyn LevelListener>) {
