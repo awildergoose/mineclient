@@ -67,19 +67,19 @@ impl Tickable for Player {
         if (is_key_down(glfw::Key::Space) || is_key_down(glfw::Key::LeftSuper))
             && self.base.on_ground
         {
-            self.base.yd = 0.12;
+            self.base.yd = 0.5;
         }
 
         self.base
-            .move_relative(xa, ya, if self.base.on_ground { 0.02 } else { 0.005 });
-        self.base.yd -= 0.005;
+            .move_relative(xa, ya, if self.base.on_ground { 0.1 } else { 0.02 });
+        self.base.yd -= 0.008;
         self.base.move_(self.base.xd, self.base.yd, self.base.zd);
         self.base.xd *= 0.91;
         self.base.yd *= 0.98;
         self.base.zd *= 0.91;
         if self.base.on_ground {
-            self.base.xd *= 0.8;
-            self.base.zd *= 0.8;
+            self.base.xd *= 0.7;
+            self.base.zd *= 0.7;
         }
     }
 }
