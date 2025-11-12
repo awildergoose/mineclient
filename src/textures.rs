@@ -10,7 +10,6 @@ use crate::gl::types::{GLenum, GLint, GLsizei};
 
 pub struct Textures {
     id_map: RefCell<HashMap<String, u32>>,
-    last_id: RefCell<i32>,
 }
 
 pub fn get_textures() -> &'static Mutex<Textures> {
@@ -42,7 +41,6 @@ impl Textures {
     pub fn new() -> Self {
         Self {
             id_map: RefCell::new(HashMap::new()),
-            last_id: RefCell::new(-9999999),
         }
     }
 
@@ -62,7 +60,8 @@ impl Textures {
         let mut id: u32 = 0;
         unsafe {
             gl::GenTextures(1, &mut id);
-            self.bind(id);
+            gl::BindTexture(gl::TEXTURE_2D, id);
+            println!("{} -> {}", resource_name, id);
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, mode);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, mode);
@@ -94,16 +93,6 @@ impl Textures {
             .borrow_mut()
             .insert(resource_name.to_string(), id);
         id
-    }
-
-    pub fn bind(&self, id: u32) {
-        unsafe {
-            let mut last = self.last_id.borrow_mut();
-            if *last != id as i32 {
-                gl::BindTexture(gl::TEXTURE_2D, id);
-                *last = id as i32;
-            }
-        }
     }
 }
 
