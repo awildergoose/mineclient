@@ -76,7 +76,34 @@ impl Zombie {
 
 impl Tickable for Zombie {
     fn tick(&mut self) {
-        self.base.tick();
+        self.base.xo = self.base.x;
+        self.base.yo = self.base.y;
+        self.base.zo = self.base.z;
+        self.rot += self.rot_a;
+        self.rot_a *= 0.99;
+        self.rot_a += (math_random() - math_random()) * math_random() * math_random() * 0.01;
+        let xa = self.rot.sin();
+        let ya = self.rot.cos();
+        if self.base.on_ground && math_random() < 0.01 {
+            self.base.yd = 0.12;
+        }
+
+        self.base
+            .move_relative(xa, ya, if self.base.on_ground { 0.02 } else { 0.005 });
+        self.yd -= 0.005;
+        self.base.move_(self.base.xd, self.base.yd, self.base.zd);
+        self.xd *= 0.91;
+        self.yd *= 0.98;
+        self.zd *= 0.91;
+
+        if self.base.y > 100.0 {
+            self.base.reset_pos();
+        }
+
+        if self.base.on_ground {
+            self.base.xd *= 0.8;
+            self.base.zd *= 0.8;
+        }
     }
 }
 
@@ -86,29 +113,36 @@ impl Drawable for Zombie {
             gl::Enable(gl::TEXTURE_2D);
             gl::BindTexture(gl::TEXTURE_2D, textures::load_2d_texture("char.png"));
             gl::PushMatrix();
-            // TODO should we really cast to f32?
-            let time = get_nano_time() as f32 / 1.0E9 * 10.0 * self.speed + self.time_offs;
-            let size = 0.058333334;
-            let yy = -((time * 0.6662).sin().abs() * 5.0) - 23.0;
+
+            let time: f64 =
+                get_nano_time() as f64 / 1.0E9 * 10.0 * self.speed as f64 + self.time_offs as f64;
+
+            let size: f32 = 0.058333334_f32;
+            let yy: f32 = (-(time * 0.6662).sin().abs() * 5.0 - 23.0) as f32;
+
             gl::Translatef(
                 self.xo + (self.x - self.xo) * a,
                 self.yo + (self.y - self.yo) * a,
                 self.zo + (self.z - self.zo) * a,
             );
-            gl::Scalef(1.0, -1.0, 1.0);
-            gl::Scalef(size, size, size);
-            gl::Translatef(0.0, yy, 0.0);
-            let c = 180.0 / PI;
-            gl::Rotatef(self.rot * c + 180.0, 0.0, 1.0, 0.0);
 
-            self.head.y_rot = ((time * 0.83) * 1.0).sin();
-            self.head.x_rot = ((time) * 0.8).sin();
-            self.arm0.x_rot = ((time * 0.6662 + PI) * 2.0).sin();
-            self.arm0.z_rot = (((time * 0.2312) + 1.0) * 1.0).sin();
-            self.arm1.x_rot = ((time * 0.6662) * 2.0).sin();
-            self.arm1.z_rot = (((time * 0.2812) - 1.0) * 1.0).sin();
-            self.leg0.x_rot = ((time * 0.6662) * 1.4).sin();
-            self.leg1.x_rot = ((time * 0.6662 + PI) * 1.4).sin();
+            gl::Scalef(1.0_f32, -1.0_f32, 1.0_f32);
+            gl::Scalef(size, size, size);
+            gl::Translatef(0.0_f32, yy, 0.0_f32);
+
+            let c: f64 = 180.0 / std::f64::consts::PI;
+            let angle: f32 = (self.rot as f64 * c + 180.0) as f32;
+            gl::Rotatef(angle, 0.0_f32, 1.0_f32, 0.0_f32);
+
+            self.head.y_rot = ((time * 0.83).sin() * 1.0) as f32;
+            self.head.x_rot = (time.sin() * 0.8) as f32;
+            self.arm0.x_rot = ((time * 0.6662 + std::f64::consts::PI).sin() * 2.0) as f32;
+            self.arm0.z_rot = ((time * 0.2312).sin() + 1.0) as f32;
+            self.arm1.x_rot = ((time * 0.6662).sin() * 2.0) as f32;
+            self.arm1.z_rot = ((time * 0.2812).sin() - 1.0) as f32;
+            self.leg0.x_rot = ((time * 0.6662).sin() * 1.4) as f32;
+            self.leg1.x_rot = ((time * 0.6662 + std::f64::consts::PI).sin() * 1.4) as f32;
+
             self.head.render();
             self.body.render();
             self.arm0.render();

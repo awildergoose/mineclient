@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
 
 use crate::{
+    character::zombie::Zombie,
     gl::{
         self,
         types::{GLdouble, GLenum, GLint, GLubyte},
@@ -14,7 +15,7 @@ use crate::{
     level::{chunk, level::Level, level_renderer::LevelRenderer},
     player::Player,
     timer::Timer,
-    traits::Tickable,
+    traits::{Drawable, Tickable},
 };
 
 unsafe extern "C" {
@@ -47,6 +48,7 @@ pub struct RubyDung {
     viewport_buffer: [i32; 16],
     select_buffer: [i32; 2000],
     hit_result: Option<HitResult>,
+    zombies: Vec<Zombie>,
 }
 
 impl RubyDung {
@@ -62,6 +64,7 @@ impl RubyDung {
             viewport_buffer: [0; 16],
             select_buffer: [0; 2000],
             hit_result: None,
+            zombies: Vec::new(),
         }
     }
 
@@ -112,6 +115,11 @@ impl RubyDung {
         self.player = Some(Player::new(level.clone()));
 
         grab_mouse();
+
+        for _i in 0..100 {
+            self.zombies
+                .push(Zombie::new(level.clone(), 128.0, 0.0, 128.0));
+        }
     }
 
     pub fn destroy(&mut self) {
@@ -148,6 +156,10 @@ impl RubyDung {
     }
 
     pub fn tick(&mut self) {
+        for z in &mut self.zombies {
+            z.tick();
+        }
+
         self.player.as_mut().unwrap().tick();
     }
 
@@ -329,6 +341,11 @@ impl RubyDung {
                 .unwrap()
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 0);
+
+            for z in &mut self.zombies {
+                z.render(a);
+            }
+
             gl::Enable(gl::FOG);
             self.level_renderer
                 .as_mut()
@@ -345,6 +362,7 @@ impl RubyDung {
                     .render_hit(hit);
             }
 
+            // for some reason, in the original code, there's a `new Cube(0, 0)` here
             gl::Disable(gl::FOG);
             update_display();
         }
