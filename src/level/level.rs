@@ -151,11 +151,21 @@ impl Level {
     }
 
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        self.is_tile(x, y, z)
+        let binding = get_tiles().lock().unwrap();
+        let tile = binding.get(&self.get_tile(x, y, z));
+        if let Some(t) = tile {
+            return t.is_solid();
+        }
+        false
     }
 
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        self.is_solid_tile(x, y, z)
+        let binding = get_tiles().lock().unwrap();
+        let tile = binding.get(&self.get_tile(x, y, z));
+        if let Some(t) = tile {
+            return t.blocks_light();
+        }
+        false
     }
 
     pub fn get_cubes(&self, aabb: AABB) -> Vec<AABB> {
