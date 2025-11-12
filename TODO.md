@@ -19,6 +19,7 @@
 # partial (working but unfinished)
 
 -   level/Level
+-   level/PerlinNoiseFilter
 -   RubyDung
 
 # incomplete
@@ -26,6 +27,5 @@
 -   level/tile/Bush
 -   level/tile/DirtTile
 -   level/tile/GrassTile
--   level/PerlinNoiseFilter
 -   particle/Particle
 -   particle/ParticleEngine

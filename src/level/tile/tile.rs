@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Mutex, OnceLock},
+    sync::{Arc, OnceLock, RwLock},
 };
 
 use crate::{
@@ -15,20 +15,21 @@ pub struct Tile {
     pub id: JInt,
 }
 
-static TILES: OnceLock<Mutex<HashMap<JInt, Tile>>> = OnceLock::new();
+static TILES: OnceLock<HashMap<JInt, Arc<RwLock<Tile>>>> = OnceLock::new();
 
-pub fn get_tiles() -> &'static Mutex<HashMap<JInt, Tile>> {
+pub fn get_tiles() -> &'static HashMap<JInt, Arc<RwLock<Tile>>> {
     TILES.get_or_init(|| {
-        Mutex::new({
-            let mut tiles = HashMap::new();
-            tiles.insert(Tile::ROCK.id, Tile::ROCK);
-            tiles.insert(Tile::GRASS.id, Tile::GRASS);
-            tiles.insert(Tile::DIRT.id, Tile::DIRT);
-            tiles.insert(Tile::STONE_BRICK.id, Tile::STONE_BRICK);
-            tiles.insert(Tile::WOOD.id, Tile::WOOD);
-            tiles.insert(Tile::BUSH.id, Tile::BUSH);
-            tiles
-        })
+        let mut tiles = HashMap::new();
+        tiles.insert(Tile::ROCK.id, Arc::new(RwLock::new(Tile::ROCK)));
+        tiles.insert(Tile::GRASS.id, Arc::new(RwLock::new(Tile::GRASS)));
+        tiles.insert(Tile::DIRT.id, Arc::new(RwLock::new(Tile::DIRT)));
+        tiles.insert(
+            Tile::STONE_BRICK.id,
+            Arc::new(RwLock::new(Tile::STONE_BRICK)),
+        );
+        tiles.insert(Tile::WOOD.id, Arc::new(RwLock::new(Tile::WOOD)));
+        tiles.insert(Tile::BUSH.id, Arc::new(RwLock::new(Tile::BUSH)));
+        tiles
     })
 }
 

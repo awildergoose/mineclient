@@ -191,29 +191,28 @@ impl LevelRenderer {
                 }
 
                 for z in z0..z1 {
-                    if let Some(tile) = get_tiles()
-                        .lock()
-                        .unwrap()
-                        .get(&self.level.borrow_mut().get_tile(x, y, z))
-                        && frustum.is_visible(&tile.get_tile_aabb(x, y, z))
+                    if let Some(tile) = get_tiles().get(&self.level.borrow_mut().get_tile(x, y, z))
                     {
-                        unsafe {
-                            gl::LoadName(z as u32);
-                            gl::PushName(0);
-                        }
-
-                        for i in 0..6 {
+                        let tile = tile.read().unwrap();
+                        if frustum.is_visible(&tile.get_tile_aabb(x, y, z)) {
                             unsafe {
-                                gl::LoadName(i);
+                                gl::LoadName(z as u32);
+                                gl::PushName(0);
                             }
 
-                            t.init();
-                            tile.render_face_no_texture(&mut t, x, y, z, i as i32);
-                            t.flush();
-                        }
+                            for i in 0..6 {
+                                unsafe {
+                                    gl::LoadName(i);
+                                }
 
-                        unsafe {
-                            gl::PopName();
+                                t.init();
+                                tile.render_face_no_texture(&mut t, x, y, z, i as i32);
+                                t.flush();
+                            }
+
+                            unsafe {
+                                gl::PopName();
+                            }
                         }
                     }
                 }

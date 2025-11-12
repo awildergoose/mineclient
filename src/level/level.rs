@@ -62,6 +62,8 @@ impl Level {
         let cf = PerlinNoiseFilter::new(self.random.clone(), 1).read(w, h);
         let rock_map = PerlinNoiseFilter::new(self.random.clone(), 1).read(w, h);
 
+        println!("Loaded perlin noise maps");
+
         for x in 0..w {
             for y in 0..d {
                 for z in 0..h {
@@ -101,6 +103,8 @@ impl Level {
                 }
             }
         }
+
+        println!("Finished map gen");
     }
 
     pub fn load(&mut self) -> Result<(), std::io::Error> {
@@ -157,6 +161,8 @@ impl Level {
                 }
             }
         }
+
+        println!("Calculated light depths");
     }
 
     pub fn add_listener(&mut self, level_listener: Box<dyn LevelListener>) {
@@ -174,10 +180,10 @@ impl Level {
     }
 
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        let binding = get_tiles().lock().unwrap();
+        let binding = get_tiles();
         let tile = binding.get(&self.get_tile(x, y, z));
         if let Some(t) = tile {
-            return t.blocks_light();
+            return t.read().unwrap().blocks_light();
         }
         false
     }
@@ -215,13 +221,13 @@ impl Level {
             z1 = self.height;
         }
 
-        let tiles = get_tiles().lock().unwrap();
+        let tiles = get_tiles();
 
         for x in x0..x1 {
             for y in y0..y1 {
                 for z in z0..z1 {
                     if let Some(tile) = tiles.get(&self.get_tile(x, y, z)) {
-                        aabbs.push(tile.get_aabb(x, y, z));
+                        aabbs.push(tile.read().unwrap().get_aabb(x, y, z));
                     }
                 }
             }
@@ -269,10 +275,10 @@ impl Level {
     }
 
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        let binding = get_tiles().lock().unwrap();
+        let binding = get_tiles();
         let tile = binding.get(&self.get_tile(x, y, z));
         if let Some(t) = tile {
-            return t.is_solid();
+            return t.read().unwrap().is_solid();
         }
         false
     }
@@ -297,8 +303,8 @@ impl Level {
             };
             let tile_id = self.get_tile(x, y, z);
 
-            if let Some(tile) = get_tiles().lock().unwrap().get_mut(&tile_id) {
-                tile.tick(self, x, y, z);
+            if let Some(tile) = get_tiles().get(&tile_id) {
+                tile.write().unwrap().tick(self, x, y, z);
             }
         }
     }

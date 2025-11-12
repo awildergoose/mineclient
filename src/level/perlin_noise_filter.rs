@@ -19,12 +19,19 @@ impl PerlinNoiseFilter {
         }
     }
 
-    pub fn read(&mut self, width: JInt, height: JInt) -> Vec<JInt> {
-        let width = width as usize;
-        let height = height as usize;
-        let mut tmp = vec![0; width * height];
+    pub fn read(&mut self, width_i: JInt, height_i: JInt) -> Vec<JInt> {
+        let width = width_i as usize;
+        let height = height_i as usize;
+        if width == 0 || height == 0 {
+            return vec![];
+        }
+
+        let mut tmp = vec![0i32; width * height];
         let level = self.levels as usize;
         let step = width >> level;
+        if step == 0 {
+            return vec![128; width * height];
+        }
 
         for y in (0..height).step_by(step) {
             for x in (0..width).step_by(step) {
@@ -33,6 +40,9 @@ impl PerlinNoiseFilter {
         }
 
         let mut stepx = width >> level;
+        let width_mask = width - 1;
+        let height_mask = height - 1;
+
         while stepx > 1 {
             let val = 256 * (stepx << level);
             let ss = stepx / 2;
@@ -54,12 +64,16 @@ impl PerlinNoiseFilter {
                 for x in (0..width).step_by(stepx) {
                     let c = tmp[x + y * width];
                     let r = tmp[(x + stepx) % width + y * width];
-                    let d = tmp[x + (y + stepx) % width * width];
-                    let mu =
-                        tmp[((x + ss) & (width - 1)) + ((y + ss - stepx) & (height - 1)) * width];
-                    let ml =
-                        tmp[((x + ss - stepx) & (width - 1)) + ((y + ss) & (height - 1)) * width];
+                    let d = tmp[x + ((y + stepx) % height) * width];
+
+                    let mu_idx = ((x + ss) & width_mask)
+                        + (((y + ss).wrapping_sub(stepx)) & height_mask) * width;
+                    let ml_idx = (((x + ss).wrapping_sub(stepx)) & width_mask)
+                        + ((y + ss) & height_mask) * width;
                     let m = tmp[(x + ss) % width + (y + ss) % height * width];
+                    let mu = tmp[mu_idx];
+                    let ml = tmp[ml_idx];
+
                     let u = (c + r + m + mu) / 4
                         + self.random.next_int_with_bound((val * 2) as u32)
                         - val as i32;
@@ -74,8 +88,7 @@ impl PerlinNoiseFilter {
             stepx /= 2;
         }
 
-        let mut result = vec![0; width * height];
-
+        let mut result = vec![0i32; width * height];
         for y in 0..height {
             for x in 0..width {
                 result[x + y * width] = tmp[x % width + y % height * width] / 512 + 128;

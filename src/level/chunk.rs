@@ -94,7 +94,7 @@ impl Chunk {
                 for z in self.z0..self.z1 {
                     let tile_id = level.get_tile(x, y, z);
                     if tile_id > 0 {
-                        get_tiles().lock().unwrap().get(&tile_id).unwrap().render(
+                        get_tiles().get(&tile_id).unwrap().read().unwrap().render(
                             &mut t,
                             &level,
                             layer as i32,
