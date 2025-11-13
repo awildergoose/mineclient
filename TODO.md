@@ -6,6 +6,7 @@
 -   level/LevelRenderer
 -   level/Level
 -   level/LevelGen
+-   gui/Font
 -   Entity
 
 # partial (working but unfinished)
@@ -14,5 +15,4 @@
 
 (comm and server wont be added for now)
 
--   gui/Font
 -   Minecraft
