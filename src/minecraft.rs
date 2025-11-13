@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
+use std::{cell::RefCell, process, rc::Rc, sync::atomic::Ordering};
 
 use crate::{
     character::zombie::Zombie,
@@ -34,10 +34,15 @@ unsafe extern "C" {
     );
 }
 
-pub fn check_error() {
+pub fn check_gl_error(s: &str) {
     let e = unsafe { gl::GetError() };
     if e != 0 {
-        panic!("{:?}", unsafe { gluErrorString(e) });
+        // is this a ptr? should we convert this into a CString?
+        let error_string = unsafe { gluErrorString(e) };
+        println!("########## GL ERROR ##########");
+        println!("@ {:?}", s);
+        println!("{}: {:?}", e, error_string);
+        process::exit(0);
     }
 }
 
@@ -104,6 +109,8 @@ impl Minecraft {
         ];
         init_display(1024, 768);
 
+        check_gl_error("Pre startup");
+
         gl::load_with(|s| {
             WINDOW_CTX.with(|ctx_cell| {
                 ctx_cell
@@ -127,11 +134,13 @@ impl Minecraft {
             gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LEQUAL);
             gl::Enable(3008); // TODO gl constant
-            gl::AlphaFunc(516, 0.5);
+            gl::AlphaFunc(516, 0.0);
             gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
             gl::MatrixMode(gl::MODELVIEW);
         }
+
+        check_gl_error("Startup");
 
         let level = Rc::new(RefCell::new(Level::new(256, 256, 64)));
 
@@ -155,6 +164,8 @@ impl Minecraft {
             zombie.reset_pos();
             self.entities.push(Box::new(zombie));
         }
+
+        check_gl_error("Post startup");
     }
 
     pub fn destroy(&mut self) {
