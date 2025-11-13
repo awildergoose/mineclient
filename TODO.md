@@ -4,6 +4,7 @@
 -   renderer/Tesselator
 -   renderer/Textures
 -   level/LevelRenderer
+-   Entity
 
 # partial (working but unfinished)
 
@@ -14,7 +15,4 @@
 -   gui/Font
 -   level/Level
 -   level/LevelGen
--   particle/Particle
--   particle/ParticleEngine
--   Entity
 -   Minecraft

@@ -42,6 +42,10 @@ impl ParticleEngine {
     }
 
     pub fn render(&mut self, player: &Player, a: JFloat, layer: JInt) {
+        if self.particles.is_empty() {
+            return;
+        }
+
         unsafe {
             gl::Enable(3553);
             gl::BindTexture(
