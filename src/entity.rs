@@ -28,6 +28,10 @@ pub struct Entity {
     pub bb_height: JFloat,
 }
 
+pub trait EntityTrait {
+    fn render(&self, _a: JFloat) {}
+}
+
 impl Entity {
     pub fn new(level: Rc<RefCell<Level>>) -> Self {
         let mut this = Self {
@@ -148,6 +152,8 @@ impl Entity {
         self.level.borrow_mut().is_lit(x_tile, y_tile, z_tile)
     }
 }
+
+impl EntityTrait for Entity {}
 
 impl Tickable for Entity {
     fn tick(&mut self) {
