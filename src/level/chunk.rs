@@ -137,6 +137,6 @@ impl Chunk {
         let xd = player.x - self.x;
         let yd = player.y - self.y;
         let zd = player.z - self.z;
-        xd * zd + yd * yd + zd * zd
+        xd * xd + yd * yd + zd * zd
     }
 }
