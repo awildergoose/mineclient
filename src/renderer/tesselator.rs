@@ -18,6 +18,7 @@ pub struct Tesselator {
     b: JFloat,
     has_color: JBoolean,
     has_texture: JBoolean,
+    no_color: JBoolean,
     len: usize,
     p: usize,
 }
@@ -34,39 +35,42 @@ impl Tesselator {
             b: 0.0,
             has_color: false,
             has_texture: false,
+            no_color: false,
             len: 3,
             p: 0,
         }
     }
 
     pub fn flush(&mut self) {
-        unsafe {
-            let buffer = self.buffer.as_mut_ptr() as *const c_void;
-            if self.has_texture && self.has_color {
-                gl::InterleavedArrays(10794, 0, buffer);
-            } else if self.has_texture {
-                gl::InterleavedArrays(10791, 0, buffer);
-            } else if self.has_color {
-                gl::InterleavedArrays(10788, 0, buffer);
-            } else {
-                gl::InterleavedArrays(10785, 0, buffer);
-            }
+        if self.vertices > 0 {
+            unsafe {
+                let buffer = self.buffer.as_mut_ptr() as *const c_void;
+                if self.has_texture && self.has_color {
+                    gl::InterleavedArrays(10794, 0, buffer);
+                } else if self.has_texture {
+                    gl::InterleavedArrays(10791, 0, buffer);
+                } else if self.has_color {
+                    gl::InterleavedArrays(10788, 0, buffer);
+                } else {
+                    gl::InterleavedArrays(10785, 0, buffer);
+                }
 
-            gl::EnableClientState(32884);
-            if self.has_texture {
-                gl::EnableClientState(32888);
-            }
-            if self.has_color {
-                gl::EnableClientState(32886);
-            }
+                gl::EnableClientState(32884);
+                if self.has_texture {
+                    gl::EnableClientState(32888);
+                }
+                if self.has_color {
+                    gl::EnableClientState(32886);
+                }
 
-            gl::DrawArrays(7, 0, self.vertices);
-            gl::DisableClientState(32884);
-            if self.has_texture {
-                gl::DisableClientState(32888);
-            }
-            if self.has_color {
-                gl::DisableClientState(32886);
+                gl::DrawArrays(7, 0, self.vertices);
+                gl::DisableClientState(32884);
+                if self.has_texture {
+                    gl::DisableClientState(32888);
+                }
+                if self.has_color {
+                    gl::DisableClientState(32886);
+                }
             }
         }
 
@@ -83,6 +87,7 @@ impl Tesselator {
         self.clear();
         self.has_color = false;
         self.has_texture = false;
+        self.no_color = false;
     }
 
     pub fn tex(&mut self, u: JFloat, v: JFloat) {
@@ -96,19 +101,32 @@ impl Tesselator {
     }
 
     pub fn color(&mut self, r: JFloat, g: JFloat, b: JFloat) {
-        if !self.has_color {
-            self.len += 3;
-        }
+        if !self.no_color {
+            if !self.has_color {
+                self.len += 3;
+            }
 
-        self.has_color = true;
-        self.r = r;
-        self.g = g;
-        self.b = b;
+            self.has_color = true;
+            self.r = r;
+            self.g = g;
+            self.b = b;
+        }
+    }
+
+    pub fn colori(&mut self, c: JInt) {
+        let r = (c >> 16 & 0xFF) as f32 / 255.0;
+        let g = (c >> 8 & 0xFF) as f32 / 255.0;
+        let b = (c & 0xFF) as f32 / 255.0;
+        self.color(r, g, b);
     }
 
     pub fn vertex_uv(&mut self, x: JFloat, y: JFloat, z: JFloat, u: JFloat, v: JFloat) {
         self.tex(u, v);
         self.vertex(x, y, z);
+    }
+
+    pub fn no_color(&mut self) {
+        self.no_color = true;
     }
 
     pub fn vertex(&mut self, x: JFloat, y: JFloat, z: JFloat) {

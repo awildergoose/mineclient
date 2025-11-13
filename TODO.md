@@ -1,5 +1,7 @@
 # complete
 
+-   renderer/Tesselator
+
 # partial (working but unfinished)
 
 # incomplete
@@ -13,7 +15,6 @@
 -   level/LevelRenderer
 -   particle/Particle
 -   particle/ParticleEngine
--   renderer/Tesselator
 -   renderer/Textures
 -   Entity
 -   Minecraft
