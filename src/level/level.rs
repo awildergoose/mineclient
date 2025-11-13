@@ -9,10 +9,9 @@ use crate::{
     level::{
         level_listener::LevelListener,
         perlin_noise_filter::PerlinNoiseFilter,
-        tile::tile::{Tile, get_tile},
+        tile::tile::{Tile, TileTrait, get_tile},
     },
     phys::aabb::AABB,
-    traits::TickableTile,
 };
 
 pub struct Level {

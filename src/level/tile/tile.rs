@@ -5,7 +5,6 @@ use crate::{
     level::{level::Level, tesselator::Tesselator},
     particle::{particle::Particle, particle_engine::ParticleEngine},
     phys::aabb::AABB,
-    traits::{TickableTile, TileDestructionEvent},
 };
 use phf::phf_map;
 
@@ -16,6 +15,7 @@ pub struct Tile {
 }
 
 // albeit ugly, it's very fast
+// TODO remove this phf map and just use a vec
 static TILE_MAP: phf::Map<i32, &'static Tile> = phf_map! {
     1 => &Tile::ROCK,
     2 => &Tile::GRASS,
@@ -29,32 +29,65 @@ pub fn get_tile(id: i32) -> Option<&'static Tile> {
     TILE_MAP.get(&id).copied()
 }
 
-impl Tile {
-    pub const ROCK: Tile = Tile { id: 1, tex: 1 };
-    pub const GRASS: Tile = Tile { id: 2, tex: 0 };
-    pub const DIRT: Tile = Tile { id: 3, tex: 2 };
-    pub const STONE_BRICK: Tile = Tile { id: 4, tex: 16 };
-    pub const WOOD: Tile = Tile { id: 5, tex: 4 };
-    // TODO use Bush type
-    pub const BUSH: Tile = Tile { id: 6, tex: 6 };
+pub trait TileTrait {
+    fn get_texture(&self, _face: JInt) -> JInt;
 
-    pub fn new(id: JInt) -> Self {
-        Self { tex: 0, id }
+    fn blocks_light(&self) -> JBoolean {
+        true
     }
 
-    pub fn new_with_id(id: JInt, tex: JInt) -> Self {
-        Self { tex, id }
+    fn is_solid(&self) -> JBoolean {
+        true
     }
 
-    pub fn render(
+    fn tick(&self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
+
+    fn destroy(
         &self,
-        t: &mut Tesselator,
-        level: &Level,
-        layer: JInt,
+        level: Rc<RefCell<Level>>,
         x: JInt,
         y: JInt,
         z: JInt,
+        particle_engine: &mut ParticleEngine,
     ) {
+        let sd = 4;
+
+        for xx in 0..sd {
+            for yy in 0..sd {
+                for zz in 0..sd {
+                    let xp = x as f32 + (xx as f32 + 0.5) / sd as f32;
+                    let yp = y as f32 + (yy as f32 + 0.5) / sd as f32;
+                    let zp = z as f32 + (zz as f32 + 0.5) / sd as f32;
+                    particle_engine.add(Particle::new(
+                        level.clone(),
+                        xp,
+                        yp,
+                        zp,
+                        xp - x as f32 - 0.5,
+                        yp - y as f32 - 0.5,
+                        zp - z as f32 - 0.5,
+                        self.get_texture(0),
+                    ));
+                }
+            }
+        }
+    }
+
+    fn get_tile_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
+        let x = x as f32;
+        let y = y as f32;
+        let z = z as f32;
+        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
+    }
+
+    fn get_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
+        let x = x as f32;
+        let y = y as f32;
+        let z = z as f32;
+        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
+    }
+
+    fn render(&self, t: &mut Tesselator, level: &Level, layer: JInt, x: JInt, y: JInt, z: JInt) {
         let c1 = 1.0;
         let c2 = 0.8;
         let c3 = 0.6;
@@ -90,7 +123,7 @@ impl Tile {
         }
     }
 
-    pub fn should_render_face(
+    fn should_render_face(
         &self,
         level: &Level,
         x: JInt,
@@ -101,11 +134,7 @@ impl Tile {
         !level.is_solid_tile(x, y, z) && (level.is_lit(x, y, z) ^ (layer == 1))
     }
 
-    pub fn get_texture(&self, _face: JInt) -> JInt {
-        self.tex
-    }
-
-    pub fn render_face(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
+    fn render_face(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let tex = self.get_texture(face);
         let u0 = (tex % 16) as f32 / 16.0;
         let u1 = u0 + 0.0624375;
@@ -161,14 +190,7 @@ impl Tile {
         }
     }
 
-    pub fn render_face_no_texture(
-        &self,
-        t: &mut Tesselator,
-        x: JInt,
-        y: JInt,
-        z: JInt,
-        face: JInt,
-    ) {
+    fn render_face_no_texture(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let x0 = x as f32 + 0.0;
         let x1 = x as f32 + 1.0;
         let y0 = y as f32 + 0.0;
@@ -218,63 +240,28 @@ impl Tile {
             t.vertex(x1, y1, z1);
         }
     }
+}
 
-    pub fn get_tile_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
-        let x = x as f32;
-        let y = y as f32;
-        let z = z as f32;
-        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
+impl Tile {
+    pub const ROCK: Tile = Tile { id: 1, tex: 1 };
+    pub const GRASS: Tile = Tile { id: 2, tex: 0 };
+    pub const DIRT: Tile = Tile { id: 3, tex: 2 };
+    pub const STONE_BRICK: Tile = Tile { id: 4, tex: 16 };
+    pub const WOOD: Tile = Tile { id: 5, tex: 4 };
+    // TODO use Bush type
+    pub const BUSH: Tile = Tile { id: 6, tex: 6 };
+
+    pub fn new(id: JInt) -> Self {
+        Self { tex: 0, id }
     }
 
-    pub fn get_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
-        let x = x as f32;
-        let y = y as f32;
-        let z = z as f32;
-        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
-    }
-
-    pub fn blocks_light(&self) -> JBoolean {
-        true
-    }
-
-    pub fn is_solid(&self) -> JBoolean {
-        true
+    pub fn new_with_id(id: JInt, tex: JInt) -> Self {
+        Self { tex, id }
     }
 }
 
-impl TickableTile for Tile {
-    fn tick(&self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
-}
-
-impl TileDestructionEvent for Tile {
-    fn destroy(
-        &self,
-        level: Rc<RefCell<Level>>,
-        x: JInt,
-        y: JInt,
-        z: JInt,
-        particle_engine: &mut ParticleEngine,
-    ) {
-        let sd = 4;
-
-        for xx in 0..sd {
-            for yy in 0..sd {
-                for zz in 0..sd {
-                    let xp = x as f32 + (xx as f32 + 0.5) / sd as f32;
-                    let yp = y as f32 + (yy as f32 + 0.5) / sd as f32;
-                    let zp = z as f32 + (zz as f32 + 0.5) / sd as f32;
-                    particle_engine.add(Particle::new(
-                        level.clone(),
-                        xp,
-                        yp,
-                        zp,
-                        xp - x as f32 - 0.5,
-                        yp - y as f32 - 0.5,
-                        zp - z as f32 - 0.5,
-                        self.tex,
-                    ));
-                }
-            }
-        }
+impl TileTrait for Tile {
+    fn get_texture(&self, _face: JInt) -> JInt {
+        self.tex
     }
 }

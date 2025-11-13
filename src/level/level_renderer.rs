@@ -14,7 +14,7 @@ use crate::{
         level::Level,
         level_listener::LevelListener,
         tesselator::Tesselator,
-        tile::tile::{Tile, get_tile},
+        tile::tile::{Tile, TileTrait, get_tile},
     },
     player::Player,
     textures,
