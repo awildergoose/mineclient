@@ -57,10 +57,10 @@ impl Level {
         let w = self.width;
         let h = self.height;
         let d = self.depth;
-        let heightmap1 = PerlinNoiseFilter::new(self.random.clone(), 0).read(w, h);
-        let heightmap2 = PerlinNoiseFilter::new(self.random.clone(), 0).read(w, h);
-        let cf = PerlinNoiseFilter::new(self.random.clone(), 1).read(w, h);
-        let rock_map = PerlinNoiseFilter::new(self.random.clone(), 1).read(w, h);
+        let heightmap1 = PerlinNoiseFilter::new(0).read(w, h);
+        let heightmap2 = PerlinNoiseFilter::new(0).read(w, h);
+        let cf = PerlinNoiseFilter::new(1).read(w, h);
+        let rock_map = PerlinNoiseFilter::new(1).read(w, h);
 
         println!("Loaded perlin noise maps");
 

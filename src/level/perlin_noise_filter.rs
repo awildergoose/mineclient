@@ -1,25 +1,18 @@
+use crate::java::JInt;
 use javarandom::JavaRandom;
 
-use crate::java::JInt;
-
 pub struct PerlinNoiseFilter {
-    random: JavaRandom,
     levels: JInt,
     fuzz: JInt,
 }
 
 impl PerlinNoiseFilter {
-    // in the original, we only take in `levels`
-    // but here, we'll allow a set seed
-    pub fn new(random: JavaRandom, levels: JInt) -> Self {
-        Self {
-            random,
-            levels,
-            fuzz: 16,
-        }
+    pub fn new(levels: JInt) -> Self {
+        Self { levels, fuzz: 16 }
     }
 
     pub fn read(&mut self, width_i: JInt, height_i: JInt) -> Vec<JInt> {
+        let mut random = JavaRandom::new();
         let width = width_i as usize;
         let height = height_i as usize;
         if width == 0 || height == 0 {
@@ -35,7 +28,7 @@ impl PerlinNoiseFilter {
 
         for y in (0..height).step_by(step) {
             for x in (0..width).step_by(step) {
-                tmp[x + y * width] = (self.random.next_int_with_bound(256) - 128) * self.fuzz;
+                tmp[x + y * width] = (random.next_int_with_bound(256) - 128) * self.fuzz;
             }
         }
 
@@ -53,8 +46,7 @@ impl PerlinNoiseFilter {
                     let ur = tmp[(x + stepx) % width + y % height * width];
                     let dl = tmp[x % width + (y + stepx) % height * width];
                     let dr = tmp[(x + stepx) % width + (y + stepx) % height * width];
-                    let m = ((ul + dl + ur + dr) / 4)
-                        + self.random.next_int_with_bound((val * 2) as u32)
+                    let m = (ul + dl + ur + dr) / 4 + random.next_int_with_bound((val * 2) as u32)
                         - val as i32;
                     tmp[x + ss + (y + ss) * width] = m;
                 }
@@ -74,11 +66,9 @@ impl PerlinNoiseFilter {
                     let mu = tmp[mu_idx];
                     let ml = tmp[ml_idx];
 
-                    let u = (c + r + m + mu) / 4
-                        + self.random.next_int_with_bound((val * 2) as u32)
+                    let u = (c + r + m + mu) / 4 + random.next_int_with_bound((val * 2) as u32)
                         - val as i32;
-                    let l = (c + d + m + ml) / 4
-                        + self.random.next_int_with_bound((val * 2) as u32)
+                    let l = (c + d + m + ml) / 4 + random.next_int_with_bound((val * 2) as u32)
                         - val as i32;
                     tmp[x + ss + y * width] = u;
                     tmp[x + (y + ss) * width] = l;

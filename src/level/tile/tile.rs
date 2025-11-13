@@ -31,7 +31,7 @@ pub fn get_tile(id: i32) -> Option<&'static Tile> {
 
 impl Tile {
     pub const ROCK: Tile = Tile { id: 1, tex: 1 };
-    pub const GRASS: Tile = Tile { id: 2, tex: 2 };
+    pub const GRASS: Tile = Tile { id: 2, tex: 0 };
     pub const DIRT: Tile = Tile { id: 3, tex: 2 };
     pub const STONE_BRICK: Tile = Tile { id: 4, tex: 16 };
     pub const WOOD: Tile = Tile { id: 5, tex: 4 };
