@@ -1,33 +1,19 @@
 # complete
 
--   character/Cube
--   character/Polygon
--   character/Zombie
--   character/ZombieModel
--   level/tile/Tile
--   level/LevelRenderer
--   level/Frustum
--   level/DirtyChunkSorter
--   level/Tesselator
--   level/Chunk
--   Textures
--   HitResult
--   Player
--   Entity
--   MinecraftApplet
--   level/tile/Bush
--   level/tile/DirtTile
--   level/tile/GrassTile
--   particle/Particle
--   particle/ParticleEngine
--   level/Level
--   level/PerlinNoiseFilter
--   RubyDung
-
 # partial (working but unfinished)
 
 # incomplete
 
-# rust stuff
+(comm and server wont be added for now)
 
--   remove all usages of Mutex and instead use RefCell to prevent deadlocks
+-   character/Zombie
+-   gui/Font
+-   level/Level
+-   level/LevelGen
+-   level/LevelRenderer
+-   particle/Particle
+-   particle/ParticleEngine
+-   renderer/Tesselator
+-   renderer/Textures
+-   Entity
+-   Minecraft
