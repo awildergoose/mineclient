@@ -48,9 +48,13 @@ impl TileTrait for GrassTile {
             level.set_tile(x, y, z, Tile::DIRT.id);
         } else {
             for _ in 0..4 {
-                let xt = x + level.random.next_int_with_bound(3) - 1;
-                let yt = y + level.random.next_int_with_bound(5) - 3;
-                let zt = z + level.random.next_int_with_bound(3) - 1;
+                let (xt, yt, zt) = {
+                    let mut random = level.random.borrow_mut();
+                    let xt = x + random.next_int_with_bound(3) - 1;
+                    let yt = y + random.next_int_with_bound(5) - 3;
+                    let zt = z + random.next_int_with_bound(3) - 1;
+                    (xt, yt, zt)
+                };
 
                 if level.get_tile(xt, yt, zt) == Tile::DIRT.id && level.is_lit(xt, yt, zt) {
                     level.set_tile(xt, yt, zt, Tile::GRASS.id);

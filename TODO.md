@@ -4,6 +4,8 @@
 -   renderer/Tesselator
 -   renderer/Textures
 -   level/LevelRenderer
+-   level/Level
+-   level/LevelGen
 -   Entity
 
 # partial (working but unfinished)
@@ -13,6 +15,4 @@
 (comm and server wont be added for now)
 
 -   gui/Font
--   level/Level
--   level/LevelGen
 -   Minecraft

@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read};
+use std::{cell::RefCell, fs::File, io::Read, rc::Rc};
 
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 use javarandom::JavaRandom;
@@ -6,11 +6,7 @@ use std::io::Write;
 
 use crate::{
     java::{JBoolean, JByte, JInt},
-    level::{
-        level_listener::LevelListener,
-        noise_map::NoiseMap,
-        tile::tile::{Tile, get_tile},
-    },
+    level::{level_gen::LevelGen, level_listener::LevelListener, tile::tile::get_tile},
     phys::aabb::AABB,
 };
 
@@ -21,7 +17,7 @@ pub struct Level {
     blocks: Vec<JByte>,
     light_depths: Vec<JInt>,
     level_listeners: Vec<Box<dyn LevelListener>>,
-    pub random: JavaRandom,
+    pub random: Rc<RefCell<JavaRandom>>,
     unprocessed: JInt,
 }
 
@@ -38,72 +34,19 @@ impl Level {
             blocks: vec![0i8; w * h * d],
             light_depths: vec![0i32; w * h],
             level_listeners: Vec::new(),
-            random: JavaRandom::with_seed(69),
+            random: Rc::new(RefCell::new(JavaRandom::with_seed(69))),
             unprocessed: 0,
         };
 
         if let Err(err) = this.load() {
             eprintln!("failed to load level: {:?}", err);
-            this.generate_map();
+            this.blocks =
+                LevelGen::new(this.random.clone(), w as JInt, h as JInt, d as JInt).generate_map();
         }
 
         this.calc_light_depths(0, 0, w as JInt, h as JInt);
 
         this
-    }
-
-    fn generate_map(&mut self) {
-        let w = self.width;
-        let h = self.height;
-        let d = self.depth;
-        let heightmap1 = NoiseMap::new(0).read(w, h);
-        let heightmap2 = NoiseMap::new(0).read(w, h);
-        let cf = NoiseMap::new(1).read(w, h);
-        let rock_map = NoiseMap::new(1).read(w, h);
-
-        println!("Loaded perlin noise maps");
-
-        for x in 0..w {
-            for y in 0..d {
-                for z in 0..h {
-                    let dh1 = heightmap1[(x + z * self.width) as usize];
-                    let mut dh2 = heightmap2[(x + z * self.width) as usize];
-                    let cfh = cf[(x + z * self.width) as usize];
-                    if cfh < 128 {
-                        dh2 = dh1;
-                    }
-
-                    let mut dh = dh1;
-                    if dh2 > dh1 {
-                        dh = dh2;
-                    }
-
-                    dh = dh / 8 + d / 3;
-                    let mut rh = rock_map[(x + z * self.width) as usize] / 8 + d / 3;
-                    if rh > dh - 2 {
-                        rh = dh - 2;
-                    }
-
-                    let i = (y * self.height + z) * self.width + x;
-                    let mut id = 0;
-                    if y == dh {
-                        id = Tile::GRASS.id;
-                    }
-
-                    if y < dh {
-                        id = Tile::DIRT.id;
-                    }
-
-                    if y <= rh {
-                        id = Tile::ROCK.id;
-                    }
-
-                    self.blocks[i as usize] = id as i8;
-                }
-            }
-        }
-
-        println!("Finished map gen");
     }
 
     pub fn load(&mut self) -> Result<(), std::io::Error> {
@@ -285,7 +228,7 @@ impl Level {
 
         for _ in 0..ticks {
             let (x, y, z) = {
-                let r = &mut self.random;
+                let r = &mut self.random.borrow_mut();
                 (
                     r.next_int_with_bound(w),
                     r.next_int_with_bound(d),
