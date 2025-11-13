@@ -12,12 +12,13 @@ use crate::{
     gl,
     java::{JFloat, get_nano_time, math_random},
     level::level::Level,
-    renderer::textures,
+    renderer::textures::Textures,
     traits::{Drawable, Tickable, TimePreciseDrawable},
 };
 
 pub struct Zombie {
     base: Entity,
+    textures: Rc<RefCell<Textures>>,
 
     pub rot: JFloat,
     pub time_offs: JFloat,
@@ -34,7 +35,13 @@ pub fn get_model() -> MutexGuard<'static, ZombieModel> {
 }
 
 impl Zombie {
-    pub fn new(level: Rc<RefCell<Level>>, x: JFloat, y: JFloat, z: JFloat) -> Self {
+    pub fn new(
+        level: Rc<RefCell<Level>>,
+        textures: Rc<RefCell<Textures>>,
+        x: JFloat,
+        y: JFloat,
+        z: JFloat,
+    ) -> Self {
         let mut base = Entity::new(level);
         base.set_pos(x, y, z);
 
@@ -49,6 +56,7 @@ impl Zombie {
             rot_a,
             speed,
             time_offs,
+            textures,
         }
     }
 }
@@ -94,7 +102,10 @@ impl Drawable for Zombie {
     fn render(&mut self, a: JFloat) {
         unsafe {
             gl::Enable(gl::TEXTURE_2D);
-            gl::BindTexture(gl::TEXTURE_2D, textures::load_2d_texture("char.png"));
+            gl::BindTexture(
+                gl::TEXTURE_2D,
+                self.textures.borrow_mut().load_texture("char.png", 9728),
+            );
             gl::PushMatrix();
 
             let time: f64 =

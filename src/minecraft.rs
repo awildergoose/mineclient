@@ -15,7 +15,7 @@ use crate::{
     level::{chunk, frustum, level::Level, tile::tile::get_tile},
     particle::particle_engine::ParticleEngine,
     player::Player,
-    renderer::{level_renderer::LevelRenderer, textures},
+    renderer::{level_renderer::LevelRenderer, textures::Textures},
     timer::Timer,
     traits::{Drawable, Tickable},
 };
@@ -54,6 +54,7 @@ pub struct Minecraft {
     zombies: Vec<Zombie>,
     paint_texture: JInt,
     particle_engine: Option<ParticleEngine>,
+    pub textures: Rc<RefCell<Textures>>,
 }
 
 impl Minecraft {
@@ -61,18 +62,19 @@ impl Minecraft {
         Self {
             width: 0,
             height: 0,
+            paint_texture: 1,
             fog_color_0: [0.0; 4],
             fog_color_1: [0.0; 4],
+            viewport_buffer: [0; 16],
+            select_buffer: [0; 2000],
             timer: Timer::new(20.0),
+            zombies: Vec::new(),
+            textures: Rc::new(RefCell::new(Textures::new())),
             level: None,
             level_renderer: None,
             player: None,
-            viewport_buffer: [0; 16],
-            select_buffer: [0; 2000],
-            hit_result: None,
-            zombies: Vec::new(),
-            paint_texture: 1,
             particle_engine: None,
+            hit_result: None,
         }
     }
 
@@ -128,17 +130,18 @@ impl Minecraft {
         let level = Rc::new(RefCell::new(Level::new(256, 256, 64)));
 
         self.level = Some(level.clone());
-        self.level_renderer = Some(LevelRenderer::new(level.clone()));
+        self.level_renderer = Some(LevelRenderer::new(level.clone(), self.textures.clone()));
         self.player = Some(Player::new(level.clone()));
         self.particle_engine = Some(ParticleEngine::new(
             level.clone(),
+            self.textures.clone(),
             self.level_renderer.as_ref().unwrap().borrow().t.clone(),
         ));
 
         grab_mouse();
 
         for _i in 0..10 {
-            let mut zombie = Zombie::new(level.clone(), 128.0, 0.0, 128.0);
+            let mut zombie = Zombie::new(level.clone(), self.textures.clone(), 128.0, 0.0, 128.0);
             zombie.reset_pos();
             self.zombies.push(zombie);
         }
@@ -198,6 +201,7 @@ impl Minecraft {
             let player = self.player.as_ref().unwrap();
             self.zombies.push(Zombie::new(
                 self.level.as_ref().unwrap().clone(),
+                self.textures.clone(),
                 player.x,
                 player.y,
                 player.z,
@@ -479,7 +483,7 @@ impl Minecraft {
             gl::Rotatef(45.0, 0.0, 1.0, 0.0);
             gl::Translatef(-1.5, 0.5, -0.5);
             gl::Scalef(-1.0, -1.0, 1.0);
-            let id = textures::load_2d_texture("terrain.png");
+            let id = self.textures.borrow_mut().load_texture("terrain.png", 9728);
             gl::BindTexture(3553, id);
             gl::Enable(3553);
             t.init();

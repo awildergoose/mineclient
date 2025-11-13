@@ -6,22 +6,28 @@ use crate::{
     level::level::Level,
     particle::particle::Particle,
     player::Player,
-    renderer::{tesselator::Tesselator, textures},
+    renderer::{tesselator::Tesselator, textures::Textures},
     traits::Tickable,
 };
 
 pub struct ParticleEngine {
     #[allow(dead_code)]
     level: Rc<RefCell<Level>>,
+    textures: Rc<RefCell<Textures>>,
     particles: Vec<Particle>,
     pub t: Rc<RefCell<Tesselator>>,
 }
 
 impl ParticleEngine {
-    pub fn new(level: Rc<RefCell<Level>>, t: Rc<RefCell<Tesselator>>) -> Self {
+    pub fn new(
+        level: Rc<RefCell<Level>>,
+        textures: Rc<RefCell<Textures>>,
+        t: Rc<RefCell<Tesselator>>,
+    ) -> Self {
         Self {
             level,
             t,
+            textures,
             particles: Vec::new(),
         }
     }
@@ -38,7 +44,10 @@ impl ParticleEngine {
     pub fn render(&mut self, player: &Player, a: JFloat, layer: JInt) {
         unsafe {
             gl::Enable(3553);
-            gl::BindTexture(3553, textures::load_2d_texture("terrain.png"));
+            gl::BindTexture(
+                3553,
+                self.textures.borrow_mut().load_texture("terrain.png", 9728),
+            );
         }
 
         let xa = -(f32::cos(player.y_rot * PI / 180.0));

@@ -16,16 +16,15 @@ use crate::{
         tile::tile::{Tile, TileTrait, get_tile},
     },
     player::Player,
-    renderer::{tesselator::Tesselator, textures},
+    renderer::{tesselator::Tesselator, textures::Textures},
 };
 
 pub static CHUNK_SIZE: JInt = 16;
 pub static MAX_REBUILDS_PER_FRAME: JInt = 8;
 
-type LevelRef = Rc<RefCell<Level>>;
-
 pub struct LevelRenderer {
-    level: LevelRef,
+    level: Rc<RefCell<Level>>,
+    textures: Rc<RefCell<Textures>>,
     chunks: Vec<Chunk>,
     x_chunks: JInt,
     y_chunks: JInt,
@@ -34,7 +33,7 @@ pub struct LevelRenderer {
 }
 
 impl LevelRenderer {
-    pub fn new(level: LevelRef) -> Rc<RefCell<Self>> {
+    pub fn new(level: Rc<RefCell<Level>>, textures: Rc<RefCell<Textures>>) -> Rc<RefCell<Self>> {
         let width = level.borrow().width;
         let height = level.borrow().height;
         let depth = level.borrow().depth;
@@ -77,6 +76,7 @@ impl LevelRenderer {
             x_chunks,
             y_chunks,
             z_chunks,
+            textures,
             t: t.clone(),
         }));
 
@@ -104,7 +104,7 @@ impl LevelRenderer {
     pub fn render(&mut self, _player: &Player, layer: u32) {
         unsafe {
             gl::Enable(3553);
-            let id = textures::load_2d_texture("terrain.png");
+            let id = self.textures.borrow_mut().load_texture("terrain.png", 9728);
             gl::BindTexture(3553, id);
         };
 

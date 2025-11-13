@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::c_void;
-use std::sync::{Mutex, OnceLock};
 
 use image::{DynamicImage, ImageResult};
 
@@ -10,15 +9,6 @@ use crate::gl::types::{GLenum, GLint, GLsizei};
 
 pub struct Textures {
     id_map: RefCell<HashMap<String, u32>>,
-}
-
-pub fn get_textures() -> &'static Mutex<Textures> {
-    static TEXTURES: OnceLock<Mutex<Textures>> = OnceLock::new();
-    TEXTURES.get_or_init(|| Mutex::new(Textures::new()))
-}
-
-pub fn load_2d_texture(name: &str) -> u32 {
-    get_textures().lock().unwrap().load_texture(name, 9728)
 }
 
 unsafe extern "C" {
