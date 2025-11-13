@@ -21,7 +21,7 @@ pub struct Level {
     blocks: Vec<JByte>,
     light_depths: Vec<JInt>,
     level_listeners: Vec<Box<dyn LevelListener>>,
-    random: JavaRandom,
+    pub random: JavaRandom,
     unprocessed: JInt,
 }
 

@@ -2,7 +2,11 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::OnceLock};
 
 use crate::{
     java::{JBoolean, JInt},
-    level::{level::Level, tesselator::Tesselator, tile::dirt_tile::DirtTile},
+    level::{
+        level::Level,
+        tesselator::Tesselator,
+        tile::{bush_tile::BushTile, dirt_tile::DirtTile, grass_tile::GrassTile},
+    },
     particle::{particle::Particle, particle_engine::ParticleEngine},
     phys::aabb::AABB,
 };
@@ -31,7 +35,7 @@ pub fn get_tile(id: i32) -> Option<&'static dyn TileTrait> {
         .map(|b| &**b)
 }
 pub trait TileTrait: Send + Sync {
-    fn get_texture(&self, _face: JInt) -> JInt;
+    fn get_texture(&self, face: JInt) -> JInt;
 
     fn blocks_light(&self) -> JBoolean {
         true
@@ -245,12 +249,11 @@ pub trait TileTrait: Send + Sync {
 
 impl Tile {
     pub const ROCK: Tile = Tile { id: 1, tex: 1 };
-    pub const GRASS: Tile = Tile { id: 2, tex: 0 };
+    pub const GRASS: GrassTile = GrassTile::TILE;
     pub const DIRT: DirtTile = DirtTile::TILE;
     pub const STONE_BRICK: Tile = Tile { id: 4, tex: 16 };
     pub const WOOD: Tile = Tile { id: 5, tex: 4 };
-    // TODO use Bush type
-    pub const BUSH: Tile = Tile { id: 6, tex: 6 };
+    pub const BUSH: BushTile = BushTile::TILE;
 
     pub fn new(id: JInt) -> Self {
         Self { tex: 0, id }

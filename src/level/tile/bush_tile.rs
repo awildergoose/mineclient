@@ -2,17 +2,17 @@ use std::ops::{Deref, DerefMut};
 
 use crate::level::tile::tile::{Tile, TileTrait};
 
-pub struct DirtTile {
+pub struct BushTile {
     base: Tile,
 }
 
-impl DirtTile {
-    pub const TILE: DirtTile = DirtTile {
-        base: Tile { tex: 2, id: 3 },
+impl BushTile {
+    pub const TILE: BushTile = BushTile {
+        base: Tile { tex: 6, id: 6 },
     };
 }
 
-impl Deref for DirtTile {
+impl Deref for BushTile {
     type Target = Tile;
 
     fn deref(&self) -> &Self::Target {
@@ -20,13 +20,13 @@ impl Deref for DirtTile {
     }
 }
 
-impl DerefMut for DirtTile {
+impl DerefMut for BushTile {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.base
     }
 }
 
-impl TileTrait for DirtTile {
+impl TileTrait for BushTile {
     fn get_texture(&self, _face: crate::java::JInt) -> crate::java::JInt {
         self.base.tex
     }
