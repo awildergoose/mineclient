@@ -441,11 +441,12 @@ impl Minecraft {
 
             if let Some(ref hit) = self.hit_result {
                 gl::Disable(3008);
+                // TODO use edit_mode here
                 self.level_renderer
                     .as_mut()
                     .unwrap()
                     .borrow_mut()
-                    .render_hit(hit);
+                    .render_hit(hit, 1, self.paint_texture);
                 gl::Enable(3008);
             }
         }

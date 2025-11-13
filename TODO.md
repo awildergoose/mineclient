@@ -3,6 +3,7 @@
 -   character/Zombie
 -   renderer/Tesselator
 -   renderer/Textures
+-   level/LevelRenderer
 
 # partial (working but unfinished)
 
@@ -13,7 +14,6 @@
 -   gui/Font
 -   level/Level
 -   level/LevelGen
--   level/LevelRenderer
 -   particle/Particle
 -   particle/ParticleEngine
 -   Entity

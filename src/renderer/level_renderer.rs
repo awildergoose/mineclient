@@ -230,7 +230,7 @@ impl LevelRenderer {
         }
     }
 
-    pub fn render_hit(&mut self, h: &HitResult) {
+    pub fn render_hit(&mut self, h: &HitResult, mode: JInt, tile_type: JInt) {
         unsafe {
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, 1);
@@ -242,9 +242,65 @@ impl LevelRenderer {
             );
         }
         let mut t = self.t.borrow_mut();
-        t.init();
-        Tile::ROCK.render_face_no_texture(&mut t, h.x, h.y, h.z, h.f);
-        t.flush();
+        if mode == 0 {
+            t.init();
+            Tile::ROCK.render_face_no_texture(&mut t, h.x, h.y, h.z, h.f);
+            t.flush();
+        } else {
+            unsafe {
+                gl::BlendFunc(gl::SRC_ALPHA, 771);
+                let br = f32::sin(get_milli_time() as f32 / 100.0) * 0.2 + 0.8;
+                gl::Color4f(
+                    br,
+                    br,
+                    br,
+                    f32::sin(get_milli_time() as f32 / 200.0) * 0.2 + 0.5,
+                );
+                gl::Enable(3553);
+                let id = self.textures.borrow_mut().load_texture("terrain.png", 9728);
+                gl::BindTexture(3553, id);
+
+                let mut x = h.x;
+                let mut y = h.y;
+                let mut z = h.z;
+
+                if h.f == 0 {
+                    y -= 1;
+                }
+
+                if h.f == 1 {
+                    y += 1;
+                }
+
+                if h.f == 2 {
+                    z -= 1;
+                }
+
+                if h.f == 3 {
+                    z += 1;
+                }
+
+                if h.f == 4 {
+                    x -= 1;
+                }
+
+                if h.f == 5 {
+                    x += 1;
+                }
+
+                t.init();
+                t.no_color();
+                get_tile(tile_type)
+                    .unwrap()
+                    .render(&mut t, &self.level.borrow(), 0, x, y, z);
+                get_tile(tile_type)
+                    .unwrap()
+                    .render(&mut t, &self.level.borrow(), 1, x, y, z);
+                t.flush();
+                gl::Disable(3553);
+            }
+        }
+
         unsafe {
             gl::Disable(gl::BLEND);
         }
