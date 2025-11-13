@@ -1,5 +1,6 @@
 use crate::java::{JBoolean, JFloat};
 
+#[derive(Clone)]
 pub struct AABB {
     epsilon: JFloat,
     pub x0: JFloat,

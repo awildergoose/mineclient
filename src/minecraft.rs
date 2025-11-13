@@ -1,4 +1,4 @@
-use std::{cell::RefCell, process, rc::Rc, sync::atomic::Ordering};
+use std::{cell::RefCell, process, rc::Rc, sync::atomic::Ordering, thread, time::Duration};
 
 use crate::{
     character::zombie::Zombie,
@@ -10,12 +10,13 @@ use crate::{
     gui::font::Font,
     hit_result::HitResult,
     java::{
-        JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse,
+        JBoolean, JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse,
         init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
         update_display,
     },
     level::{chunk, frustum, level::Level, tile::tile::get_tile},
     particle::particle_engine::ParticleEngine,
+    phys::aabb::AABB,
     player::Player,
     renderer::{level_renderer::LevelRenderer, textures::Textures},
     timer::Timer,
@@ -62,6 +63,11 @@ pub struct Minecraft {
     paint_texture: JInt,
     particle_engine: Option<ParticleEngine>,
     font: Option<Rc<RefCell<Font>>>,
+    running: JBoolean,
+    pause: JBoolean,
+    y_mouse_axis: JFloat,
+    edit_mode: JInt,
+    fps_string: String,
     pub textures: Rc<RefCell<Textures>>,
 }
 
@@ -80,6 +86,11 @@ impl Minecraft {
             timer: Timer::new(20.0),
             entities: Vec::new(),
             textures: Rc::new(RefCell::new(Textures::new())),
+            running: false,
+            pause: false,
+            edit_mode: 0,
+            fps_string: "".to_owned(),
+            y_mouse_axis: 1.0,
             font: None,
             level: None,
             level_renderer: None,
@@ -174,27 +185,43 @@ impl Minecraft {
         }
     }
 
+    pub fn stop(&mut self) {
+        self.running = false;
+    }
+
     pub fn run(&mut self) {
+        self.running = true;
         self.init();
 
         let mut last_time = get_milli_time();
         let mut frames = 0;
 
-        while !is_key_down(glfw::Key::Escape) && !is_display_close_requested() {
-            self.timer.advance_time();
+        while self.running {
+            if self.pause {
+                thread::sleep(Duration::from_millis(100));
+            } else {
+                if is_display_close_requested() {
+                    self.stop();
+                }
 
-            for _ in 0..self.timer.ticks {
-                self.tick();
-            }
+                self.timer.advance_time();
 
-            self.render(self.timer.a);
-            frames += 1;
+                for _ in 0..self.timer.ticks {
+                    self.tick();
+                }
 
-            while get_milli_time() >= last_time + 1000 {
-                println!("{} fps, {}", frames, chunk::UPDATES.load(Ordering::SeqCst));
-                chunk::UPDATES.store(0, Ordering::SeqCst);
-                last_time += 1000;
-                frames = 0;
+                check_gl_error("Pre render");
+                self.render(self.timer.a);
+                check_gl_error("Post render");
+                frames += 1;
+
+                while get_milli_time() >= last_time + 1000 {
+                    self.fps_string =
+                        format!("{} fps, {}", frames, chunk::UPDATES.load(Ordering::SeqCst));
+                    chunk::UPDATES.store(0, Ordering::SeqCst);
+                    last_time += 1000;
+                    frames = 0;
+                }
             }
         }
 
@@ -202,6 +229,14 @@ impl Minecraft {
     }
 
     pub fn tick(&mut self) {
+        if is_mouse_button_just_pressed(0) {
+            self.handle_mouse_click();
+        }
+
+        if is_mouse_button_just_pressed(1) {
+            self.edit_mode = (self.edit_mode + 1) % 2;
+        }
+
         if is_key_down(glfw::Key::Enter) {
             if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
                 eprintln!("failed to save level: {:?}", err);
@@ -218,6 +253,8 @@ impl Minecraft {
             self.paint_texture = 5;
         } else if is_key_down(glfw::Key::Num6) {
             self.paint_texture = 6;
+        } else if is_key_down(glfw::Key::Y) {
+            self.y_mouse_axis *= -1.0;
         } else if is_key_down(glfw::Key::G) {
             let player = self.player.as_ref().unwrap();
             self.entities.push(Box::new(Zombie::new(
@@ -342,78 +379,102 @@ impl Minecraft {
         }
     }
 
+    pub fn handle_mouse_click(&mut self) {
+        let hito = self.hit_result.as_mut();
+        if let Some(ref hit) = hito {
+            if self.edit_mode == 0 {
+                let binding = self.level.as_mut().unwrap();
+                let old_type = binding.borrow().get_tile(hit.x, hit.y, hit.z);
+
+                let changed = {
+                    let mut level = binding.borrow_mut();
+                    level.set_tile(hit.x, hit.y, hit.z, 0)
+                };
+
+                if let Some(otile) = get_tile(old_type).as_mut()
+                    && changed
+                {
+                    otile.destroy(
+                        binding.clone(),
+                        hit.x,
+                        hit.y,
+                        hit.z,
+                        self.particle_engine.as_mut().unwrap(),
+                    );
+                }
+            } else {
+                let mut x = hit.x;
+                let mut y = hit.y;
+                let mut z = hit.z;
+                if hit.f == 0 {
+                    y -= 1;
+                }
+
+                if hit.f == 1 {
+                    y += 1;
+                }
+
+                if hit.f == 2 {
+                    z -= 1;
+                }
+
+                if hit.f == 3 {
+                    z += 1;
+                }
+
+                if hit.f == 4 {
+                    x -= 1;
+                }
+
+                if hit.f == 5 {
+                    x += 1;
+                }
+
+                let paint_texture = self.paint_texture;
+                let aabb = get_tile(paint_texture).unwrap().get_aabb(x, y, z);
+
+                if aabb.is_none() || self.is_free(aabb.unwrap()) {
+                    self.level
+                        .as_mut()
+                        .unwrap()
+                        .borrow_mut()
+                        .set_tile(x, y, z, paint_texture);
+                }
+            }
+        }
+    }
+
+    pub fn is_free(&self, aabb: AABB) -> JBoolean {
+        if self.player.as_ref().unwrap().bb.intersects(aabb.clone()) {
+            false
+        } else {
+            for e in &self.entities {
+                if e.get_bb().intersects(aabb.clone()) {
+                    return false;
+                }
+            }
+
+            true
+        }
+    }
+
     pub fn render(&mut self, a: JFloat) {
         let xo = get_mouse_dx();
         let yo = get_mouse_dy();
-        self.player.as_mut().unwrap().turn(xo, yo);
+        self.player
+            .as_mut()
+            .unwrap()
+            .turn(xo, yo * self.y_mouse_axis);
+        // in the original it resets mouse pos
+        // to w/2 h/2 here but we dont need that
+        check_gl_error("Set viewport");
         self.pick(a);
-
-        let hito = self.hit_result.as_mut();
-        if is_mouse_button_just_pressed(1)
-            && let Some(ref hit) = hito
-        {
-            let binding = self.level.as_mut().unwrap();
-            let old_type = binding.borrow().get_tile(hit.x, hit.y, hit.z);
-
-            let changed = {
-                let mut level = binding.borrow_mut();
-                level.set_tile(hit.x, hit.y, hit.z, 0)
-            };
-
-            if let Some(otile) = get_tile(old_type).as_mut()
-                && changed
-            {
-                otile.destroy(
-                    binding.clone(),
-                    hit.x,
-                    hit.y,
-                    hit.z,
-                    self.particle_engine.as_mut().unwrap(),
-                );
-            }
-        }
-
-        if is_mouse_button_just_pressed(0)
-            && let Some(ref hit) = hito
-        {
-            let mut x = hit.x;
-            let mut y = hit.y;
-            let mut z = hit.z;
-            if hit.f == 0 {
-                y -= 1;
-            }
-
-            if hit.f == 1 {
-                y += 1;
-            }
-
-            if hit.f == 2 {
-                z -= 1;
-            }
-
-            if hit.f == 3 {
-                z += 1;
-            }
-
-            if hit.f == 4 {
-                x -= 1;
-            }
-
-            if hit.f == 5 {
-                x += 1;
-            }
-
-            let paint_texture = self.paint_texture;
-            self.level
-                .as_mut()
-                .unwrap()
-                .borrow_mut()
-                .set_tile(x, y, z, paint_texture);
-        }
+        check_gl_error("Picked");
 
         unsafe {
             gl::Clear(16640);
             self.setup_camera(a);
+            check_gl_error("Set up camera");
             gl::Enable(gl::CULL_FACE);
             let frustum = frustum::get_frustum();
             self.level_renderer
@@ -421,6 +482,7 @@ impl Minecraft {
                 .unwrap()
                 .borrow_mut()
                 .update_dirty_chunks(&frustum.lock().unwrap(), self.player.as_ref().unwrap());
+            check_gl_error("Update chunks");
             self.setup_fog(0);
             gl::Enable(2912);
             self.level_renderer
@@ -428,6 +490,7 @@ impl Minecraft {
                 .unwrap()
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 0);
+            check_gl_error("Rendered level");
 
             for z in &mut self.entities {
                 if z.is_lit() && frustum.lock().unwrap().is_visible(z.get_bb()) {
@@ -435,10 +498,12 @@ impl Minecraft {
                 }
             }
 
+            check_gl_error("Rendered entities");
             self.particle_engine
                 .as_mut()
                 .unwrap()
                 .render(self.player.as_ref().unwrap(), a, 0);
+            check_gl_error("Rendered particles");
             self.setup_fog(1);
             self.level_renderer
                 .as_mut()
@@ -459,20 +524,22 @@ impl Minecraft {
             gl::Disable(2896);
             gl::Disable(gl::TEXTURE_2D);
             gl::Disable(2912);
+            check_gl_error("Rendered rest");
 
             if let Some(ref hit) = self.hit_result {
                 gl::Disable(3008);
-                // TODO use edit_mode here
                 self.level_renderer
                     .as_mut()
                     .unwrap()
                     .borrow_mut()
-                    .render_hit(hit, 1, self.paint_texture);
+                    .render_hit(hit, self.edit_mode, self.paint_texture);
                 gl::Enable(3008);
             }
         }
 
+        check_gl_error("Rendered hit");
         self.draw_gui(a);
+        check_gl_error("Rendered gui");
         update_display();
     }
 
@@ -498,6 +565,7 @@ impl Minecraft {
             gl::MatrixMode(5888);
             gl::LoadIdentity();
             gl::Translatef(0.0, 0.0, -200.0);
+            check_gl_error("GUI: Init");
             gl::PushMatrix();
             gl::Translatef((screen_width - 16) as f32, 16.0, 0.0);
             gl::Scalef(16.0, 16.0, 16.0);
@@ -520,6 +588,10 @@ impl Minecraft {
             t.flush();
             gl::Disable(3553);
             gl::PopMatrix();
+            check_gl_error("GUI: Draw selected");
+            let font = self.font.as_mut().unwrap().borrow_mut();
+            font.draw_shadow(&mut t, VERSION_STRING.to_owned(), 2, 2, 16777215);
+            font.draw_shadow(&mut t, self.fps_string.clone(), 2, 12, 16777215);
             gl::Color4f(1.0, 1.0, 1.0, 1.0);
         }
 
@@ -536,6 +608,7 @@ impl Minecraft {
         t.vertex(wc - 4.0, hc + 1.0, 0.0);
         t.vertex(wc + 5.0, hc + 1.0, 0.0);
         t.flush();
+        check_gl_error("GUI: Draw crosshair");
     }
 
     fn setup_fog(&mut self, i: JInt) {
