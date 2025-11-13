@@ -38,7 +38,7 @@ impl Font {
                 for row in 0..8 {
                     let y_pixel = (yt * 8 + row) * w as usize;
                     let idx = x_pixel + y_pixel;
-                    let pixel = raw_pixels[idx * 4];
+                    let pixel = raw_pixels[idx * 4 + 2];
 
                     if pixel > 128 {
                         empty_column = false;
@@ -152,7 +152,7 @@ impl Font {
             );
             t.vertex_uv((x + xo) as f32, y as f32, 0.0, ix / 128.0, iy / 128.0);
 
-            xo += self.char_widths[c as usize];
+            xo += self.char_widths[c as usize] + 1;
             i += 1;
         }
 

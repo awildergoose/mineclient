@@ -200,7 +200,7 @@ impl Minecraft {
             if self.pause {
                 thread::sleep(Duration::from_millis(100));
             } else {
-                if is_display_close_requested() {
+                if is_display_close_requested() || is_key_down(glfw::Key::Escape) {
                     self.stop();
                 }
 
