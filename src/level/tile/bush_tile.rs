@@ -49,7 +49,7 @@ impl TileTrait for BushTile {
 
     fn render(
         &self,
-        t: &mut crate::level::tesselator::Tesselator,
+        t: &mut crate::renderer::tesselator::Tesselator,
         level: &crate::level::level::Level,
         layer: crate::java::JInt,
         x: crate::java::JInt,

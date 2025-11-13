@@ -1,12 +1,12 @@
 use crate::java::JInt;
 use javarandom::JavaRandom;
 
-pub struct PerlinNoiseFilter {
+pub struct NoiseMap {
     levels: JInt,
     fuzz: JInt,
 }
 
-impl PerlinNoiseFilter {
+impl NoiseMap {
     pub fn new(levels: JInt) -> Self {
         Self { levels, fuzz: 16 }
     }

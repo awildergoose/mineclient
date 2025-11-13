@@ -8,7 +8,7 @@ use crate::{
     java::{JBoolean, JByte, JInt},
     level::{
         level_listener::LevelListener,
-        perlin_noise_filter::PerlinNoiseFilter,
+        noise_map::NoiseMap,
         tile::tile::{Tile, get_tile},
     },
     phys::aabb::AABB,
@@ -56,10 +56,10 @@ impl Level {
         let w = self.width;
         let h = self.height;
         let d = self.depth;
-        let heightmap1 = PerlinNoiseFilter::new(0).read(w, h);
-        let heightmap2 = PerlinNoiseFilter::new(0).read(w, h);
-        let cf = PerlinNoiseFilter::new(1).read(w, h);
-        let rock_map = PerlinNoiseFilter::new(1).read(w, h);
+        let heightmap1 = NoiseMap::new(0).read(w, h);
+        let heightmap2 = NoiseMap::new(0).read(w, h);
+        let cf = NoiseMap::new(1).read(w, h);
+        let rock_map = NoiseMap::new(1).read(w, h);
 
         println!("Loaded perlin noise maps");
 

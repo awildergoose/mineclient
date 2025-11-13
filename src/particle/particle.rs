@@ -7,7 +7,8 @@ use std::{
 use crate::{
     entity::Entity,
     java::{JFloat, JInt, math_random},
-    level::{level::Level, tesselator::Tesselator},
+    level::level::Level,
+    renderer::tesselator::Tesselator,
     traits::Tickable,
 };
 

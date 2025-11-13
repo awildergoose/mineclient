@@ -7,9 +7,10 @@ use std::{
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt, JLong, get_milli_time, get_nano_time},
-    level::{level::Level, tesselator::Tesselator, tile::tile::get_tile},
+    level::{level::Level, tile::tile::get_tile},
     phys::aabb::AABB,
     player::Player,
+    renderer::tesselator::Tesselator,
 };
 
 pub static UPDATES: AtomicI32 = AtomicI32::new(0);

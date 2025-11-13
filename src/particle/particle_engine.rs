@@ -3,10 +3,10 @@ use std::{cell::RefCell, f32::consts::PI, rc::Rc};
 use crate::{
     gl,
     java::{JFloat, JInt},
-    level::{level::Level, tesselator::Tesselator},
+    level::level::Level,
     particle::particle::Particle,
     player::Player,
-    textures,
+    renderer::{tesselator::Tesselator, textures},
     traits::Tickable,
 };
 

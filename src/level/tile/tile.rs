@@ -4,11 +4,11 @@ use crate::{
     java::{JBoolean, JInt},
     level::{
         level::Level,
-        tesselator::Tesselator,
         tile::{bush_tile::BushTile, dirt_tile::DirtTile, grass_tile::GrassTile},
     },
     particle::{particle::Particle, particle_engine::ParticleEngine},
     phys::aabb::AABB,
+    renderer::tesselator::Tesselator,
 };
 
 #[derive(Debug)]

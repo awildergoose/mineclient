@@ -12,7 +12,7 @@ use crate::{
     gl,
     java::{JFloat, get_nano_time, math_random},
     level::level::Level,
-    textures,
+    renderer::textures,
     traits::{Drawable, Tickable, TimePreciseDrawable},
 };
 

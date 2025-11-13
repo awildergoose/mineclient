@@ -12,10 +12,10 @@ use crate::{
         init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
         update_display,
     },
-    level::{chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile},
+    level::{chunk, frustum, level::Level, tile::tile::get_tile},
     particle::particle_engine::ParticleEngine,
     player::Player,
-    textures,
+    renderer::{level_renderer::LevelRenderer, textures},
     timer::Timer,
     traits::{Drawable, Tickable},
 };
@@ -39,7 +39,7 @@ pub fn check_error() {
     }
 }
 
-pub struct RubyDung {
+pub struct Minecraft {
     width: JInt,
     height: JInt,
     fog_color_0: [f32; 4],
@@ -56,8 +56,8 @@ pub struct RubyDung {
     particle_engine: Option<ParticleEngine>,
 }
 
-impl RubyDung {
-    pub fn new() -> RubyDung {
+impl Minecraft {
+    pub fn new() -> Minecraft {
         Self {
             width: 0,
             height: 0,
@@ -536,7 +536,7 @@ impl RubyDung {
     }
 }
 
-impl Default for RubyDung {
+impl Default for Minecraft {
     fn default() -> Self {
         Self::new()
     }
