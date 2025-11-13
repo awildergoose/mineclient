@@ -12,12 +12,7 @@ use crate::{
         init_display, is_display_close_requested, is_key_down, is_mouse_button_down,
         update_display,
     },
-    level::{
-        chunk, frustum,
-        level::Level,
-        level_renderer::LevelRenderer,
-        tile::tile::{TileTrait, get_tile},
-    },
+    level::{chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile},
     particle::particle_engine::ParticleEngine,
     player::Player,
     textures,

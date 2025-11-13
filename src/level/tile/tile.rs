@@ -1,35 +1,36 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::OnceLock};
 
 use crate::{
     java::{JBoolean, JInt},
-    level::{level::Level, tesselator::Tesselator},
+    level::{level::Level, tesselator::Tesselator, tile::dirt_tile::DirtTile},
     particle::{particle::Particle, particle_engine::ParticleEngine},
     phys::aabb::AABB,
 };
-use phf::phf_map;
 
 #[derive(Debug)]
 pub struct Tile {
-    tex: JInt,
+    pub tex: JInt,
     pub id: JInt,
 }
 
-// albeit ugly, it's very fast
-// TODO remove this phf map and just use a vec
-static TILE_MAP: phf::Map<i32, &'static Tile> = phf_map! {
-    1 => &Tile::ROCK,
-    2 => &Tile::GRASS,
-    3 => &Tile::DIRT,
-    4 => &Tile::STONE_BRICK,
-    5 => &Tile::WOOD,
-    6 => &Tile::BUSH,
-};
+static TILE_MAP: OnceLock<HashMap<i32, Box<dyn TileTrait>>> = OnceLock::new();
 
-pub fn get_tile(id: i32) -> Option<&'static Tile> {
-    TILE_MAP.get(&id).copied()
+pub fn get_tile(id: i32) -> Option<&'static dyn TileTrait> {
+    TILE_MAP
+        .get_or_init(|| {
+            let mut h: HashMap<i32, Box<dyn TileTrait>> = HashMap::new();
+            h.insert(Tile::ROCK.id, Box::new(Tile::ROCK));
+            h.insert(Tile::GRASS.id, Box::new(Tile::GRASS));
+            h.insert(Tile::DIRT.id, Box::new(Tile::DIRT));
+            h.insert(Tile::STONE_BRICK.id, Box::new(Tile::STONE_BRICK));
+            h.insert(Tile::WOOD.id, Box::new(Tile::WOOD));
+            h.insert(Tile::BUSH.id, Box::new(Tile::BUSH));
+            h
+        })
+        .get(&id)
+        .map(|b| &**b)
 }
-
-pub trait TileTrait {
+pub trait TileTrait: Send + Sync {
     fn get_texture(&self, _face: JInt) -> JInt;
 
     fn blocks_light(&self) -> JBoolean {
@@ -245,7 +246,7 @@ pub trait TileTrait {
 impl Tile {
     pub const ROCK: Tile = Tile { id: 1, tex: 1 };
     pub const GRASS: Tile = Tile { id: 2, tex: 0 };
-    pub const DIRT: Tile = Tile { id: 3, tex: 2 };
+    pub const DIRT: DirtTile = DirtTile::TILE;
     pub const STONE_BRICK: Tile = Tile { id: 4, tex: 16 };
     pub const WOOD: Tile = Tile { id: 5, tex: 4 };
     // TODO use Bush type

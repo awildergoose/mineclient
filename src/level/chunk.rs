@@ -7,11 +7,7 @@ use std::{
 use crate::{
     gl,
     java::{JBoolean, JFloat, JInt, JLong, get_milli_time, get_nano_time},
-    level::{
-        level::Level,
-        tesselator::Tesselator,
-        tile::tile::{TileTrait, get_tile},
-    },
+    level::{level::Level, tesselator::Tesselator, tile::tile::get_tile},
     phys::aabb::AABB,
     player::Player,
 };
