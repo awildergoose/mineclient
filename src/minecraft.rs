@@ -120,8 +120,6 @@ impl Minecraft {
         ];
         init_display(1024, 768);
 
-        check_gl_error("Pre startup");
-
         gl::load_with(|s| {
             WINDOW_CTX.with(|ctx_cell| {
                 ctx_cell
@@ -133,6 +131,8 @@ impl Minecraft {
                     .unwrap() as *const _
             })
         });
+
+        check_gl_error("Pre startup");
 
         self.width = 1024;
         self.height = 768;
@@ -229,14 +229,6 @@ impl Minecraft {
     }
 
     pub fn tick(&mut self) {
-        if is_mouse_button_just_pressed(0) {
-            self.handle_mouse_click();
-        }
-
-        if is_mouse_button_just_pressed(1) {
-            self.edit_mode = (self.edit_mode + 1) % 2;
-        }
-
         if is_key_down(glfw::Key::Enter) {
             if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
                 eprintln!("failed to save level: {:?}", err);
@@ -459,6 +451,14 @@ impl Minecraft {
     }
 
     pub fn render(&mut self, a: JFloat) {
+        if is_mouse_button_just_pressed(0) {
+            self.handle_mouse_click();
+        }
+
+        if is_mouse_button_just_pressed(1) {
+            self.edit_mode = (self.edit_mode + 1) % 2;
+        }
+
         let xo = get_mouse_dx();
         let yo = get_mouse_dy();
         self.player

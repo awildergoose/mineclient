@@ -161,8 +161,11 @@ impl Tesselator {
         self.p = p;
         self.vertices += 1;
 
-        if self.vertices % 4 == 0 && self.p >= MAX_FLOATS - self.len * 4 {
-            self.flush();
+        if self.vertices % 4 == 0 {
+            let threshold = MAX_FLOATS.saturating_sub(self.len * 4);
+            if self.p >= threshold {
+                self.flush();
+            }
         }
     }
 }

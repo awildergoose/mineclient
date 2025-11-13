@@ -28,7 +28,7 @@ pub struct Entity {
 }
 
 pub trait EntityTrait {
-    fn render(&self, _a: JFloat) {}
+    fn render(&mut self, _a: JFloat) {}
     fn tick(&mut self) {}
     fn is_removed(&self) -> JBoolean;
 

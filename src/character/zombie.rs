@@ -13,7 +13,7 @@ use crate::{
     java::{JFloat, get_nano_time, math_random},
     level::level::Level,
     renderer::textures::Textures,
-    traits::{Drawable, TimePreciseDrawable},
+    traits::TimePreciseDrawable,
 };
 
 pub struct Zombie {
@@ -57,42 +57,6 @@ impl Zombie {
             speed,
             time_offs,
             textures,
-        }
-    }
-}
-
-impl Drawable for Zombie {
-    fn render(&mut self, a: JFloat) {
-        unsafe {
-            gl::Enable(gl::TEXTURE_2D);
-            gl::BindTexture(
-                gl::TEXTURE_2D,
-                self.textures.borrow_mut().load_texture("char.png", 9728),
-            );
-            gl::PushMatrix();
-
-            let time: f64 =
-                get_nano_time() as f64 / 1.0E9 * 10.0 * self.speed as f64 + self.time_offs as f64;
-
-            let size: f32 = 0.058333334_f32;
-            let yy: f32 = (-(time * 0.6662).sin().abs() * 5.0 - 23.0) as f32;
-
-            gl::Translatef(
-                self.xo + (self.x - self.xo) * a,
-                self.yo + (self.y - self.yo) * a,
-                self.zo + (self.z - self.zo) * a,
-            );
-
-            gl::Scalef(1.0_f32, -1.0_f32, 1.0_f32);
-            gl::Scalef(size, size, size);
-            gl::Translatef(0.0_f32, yy, 0.0_f32);
-
-            let c: f64 = 180.0 / std::f64::consts::PI;
-            let angle: f32 = (self.rot as f64 * c + 180.0) as f32;
-            gl::Rotatef(angle, 0.0_f32, 1.0_f32, 0.0_f32);
-            get_model().render(time);
-            gl::PopMatrix();
-            gl::Disable(gl::TEXTURE_2D);
         }
     }
 }
@@ -142,6 +106,40 @@ impl EntityTrait for Zombie {
         if self.base.on_ground {
             self.base.xd *= 0.7;
             self.base.zd *= 0.7;
+        }
+    }
+
+    fn render(&mut self, a: JFloat) {
+        unsafe {
+            gl::Enable(gl::TEXTURE_2D);
+            gl::BindTexture(
+                gl::TEXTURE_2D,
+                self.textures.borrow_mut().load_texture("char.png", 9728),
+            );
+            gl::PushMatrix();
+
+            let time: f64 =
+                get_nano_time() as f64 / 1.0E9 * 10.0 * self.speed as f64 + self.time_offs as f64;
+
+            let size: f32 = 0.058333334_f32;
+            let yy: f32 = (-(time * 0.6662).sin().abs() * 5.0 - 23.0) as f32;
+
+            gl::Translatef(
+                self.xo + (self.x - self.xo) * a,
+                self.yo + (self.y - self.yo) * a,
+                self.zo + (self.z - self.zo) * a,
+            );
+
+            gl::Scalef(1.0_f32, -1.0_f32, 1.0_f32);
+            gl::Scalef(size, size, size);
+            gl::Translatef(0.0_f32, yy, 0.0_f32);
+
+            let c: f64 = 180.0 / std::f64::consts::PI;
+            let angle: f32 = (self.rot as f64 * c + 180.0) as f32;
+            gl::Rotatef(angle, 0.0_f32, 1.0_f32, 0.0_f32);
+            get_model().render(time);
+            gl::PopMatrix();
+            gl::Disable(gl::TEXTURE_2D);
         }
     }
 
