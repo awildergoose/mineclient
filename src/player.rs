@@ -4,7 +4,12 @@ use std::{
     rc::Rc,
 };
 
-use crate::{entity::Entity, java::is_key_down, level::level::Level, traits::Tickable};
+use crate::{
+    entity::{Entity, EntityTrait},
+    java::is_key_down,
+    level::level::Level,
+    traits::Tickable,
+};
 
 pub struct Player {
     pub base: Entity,

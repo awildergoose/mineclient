@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     gl,
     java::{JBoolean, JInt},
@@ -13,7 +15,7 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn new(name: &str, textures: &Textures) -> Self {
+    pub fn new(name: &str, textures: Rc<RefCell<Textures>>) -> Self {
         let img = resolve_texture(name)
             .unwrap_or_else(|_| panic!("Failed to load font image: {}", name))
             .into_rgba8();
@@ -58,7 +60,7 @@ impl Font {
             char_widths[i] = x;
         }
 
-        let font_texture = textures.load_texture(name, 9728);
+        let font_texture = textures.borrow_mut().load_texture(name, 9728);
 
         Self {
             char_widths,

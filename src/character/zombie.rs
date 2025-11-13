@@ -8,12 +8,12 @@ use std::{
 
 use crate::{
     character::zombie_model::ZombieModel,
-    entity::Entity,
+    entity::{Entity, EntityTrait},
     gl,
     java::{JFloat, get_nano_time, math_random},
     level::level::Level,
     renderer::textures::Textures,
-    traits::{Drawable, Tickable, TimePreciseDrawable},
+    traits::{Drawable, TimePreciseDrawable},
 };
 
 pub struct Zombie {
@@ -57,43 +57,6 @@ impl Zombie {
             speed,
             time_offs,
             textures,
-        }
-    }
-}
-
-impl Tickable for Zombie {
-    // refers to xa, ya, we keep this for easier
-    // translation and comparison
-    #[allow(unused_assignments)]
-    fn tick(&mut self) {
-        self.base.xo = self.base.x;
-        self.base.yo = self.base.y;
-        self.base.zo = self.base.z;
-        let mut xa = 0.0;
-        let mut ya = 0.0;
-        if self.base.y < -100.0 {
-            self.base.remove();
-        }
-        self.rot += self.rot_a;
-        self.rot_a *= 0.99;
-        self.rot_a += (math_random() - math_random()) * math_random() * math_random() * 0.08;
-        xa = self.rot.sin();
-        ya = self.rot.cos();
-        if self.base.on_ground && math_random() < 0.08 {
-            self.base.yd = 0.5;
-        }
-
-        self.base
-            .move_relative(xa, ya, if self.base.on_ground { 0.1 } else { 0.02 });
-        self.yd -= 0.08;
-        self.base.move_(self.base.xd, self.base.yd, self.base.zd);
-        self.xd *= 0.91;
-        self.yd *= 0.98;
-        self.zd *= 0.91;
-
-        if self.base.on_ground {
-            self.base.xd *= 0.7;
-            self.base.zd *= 0.7;
         }
     }
 }
@@ -145,5 +108,64 @@ impl Deref for Zombie {
 impl DerefMut for Zombie {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.base
+    }
+}
+
+impl EntityTrait for Zombie {
+    #[allow(unused_assignments)]
+    fn tick(&mut self) {
+        self.base.xo = self.base.x;
+        self.base.yo = self.base.y;
+        self.base.zo = self.base.z;
+        let mut xa = 0.0;
+        let mut ya = 0.0;
+        if self.base.y < -100.0 {
+            self.base.remove();
+        }
+        self.rot += self.rot_a;
+        self.rot_a *= 0.99;
+        self.rot_a += (math_random() - math_random()) * math_random() * math_random() * 0.08;
+        xa = self.rot.sin();
+        ya = self.rot.cos();
+        if self.base.on_ground && math_random() < 0.08 {
+            self.base.yd = 0.5;
+        }
+
+        self.base
+            .move_relative(xa, ya, if self.base.on_ground { 0.1 } else { 0.02 });
+        self.yd -= 0.08;
+        self.base.move_(self.base.xd, self.base.yd, self.base.zd);
+        self.xd *= 0.91;
+        self.yd *= 0.98;
+        self.zd *= 0.91;
+
+        if self.base.on_ground {
+            self.base.xd *= 0.7;
+            self.base.zd *= 0.7;
+        }
+    }
+
+    fn is_removed(&self) -> crate::java::JBoolean {
+        self.removed
+    }
+
+    fn get_x(&self) -> JFloat {
+        self.x
+    }
+
+    fn get_y(&self) -> JFloat {
+        self.y
+    }
+
+    fn get_z(&self) -> JFloat {
+        self.z
+    }
+
+    fn get_level(&self) -> Rc<RefCell<Level>> {
+        self.level.clone()
+    }
+
+    fn get_bb(&self) -> &crate::phys::aabb::AABB {
+        &self.bb
     }
 }

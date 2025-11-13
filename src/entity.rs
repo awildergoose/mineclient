@@ -4,11 +4,10 @@ use crate::{
     java::{JBoolean, JFloat, JInt, math_random},
     level::level::Level,
     phys::aabb::AABB,
-    traits::Tickable,
 };
 
 pub struct Entity {
-    level: Rc<RefCell<Level>>,
+    pub level: Rc<RefCell<Level>>,
     pub height_offset: JFloat,
     pub xo: JFloat,
     pub yo: JFloat,
@@ -30,6 +29,22 @@ pub struct Entity {
 
 pub trait EntityTrait {
     fn render(&self, _a: JFloat) {}
+    fn tick(&mut self) {}
+    fn is_removed(&self) -> JBoolean;
+
+    // Maybe an EntityMeta and a `pub make_meta(entity: Entity) -> EntityMeta` instead?
+    fn get_x(&self) -> JFloat;
+    fn get_y(&self) -> JFloat;
+    fn get_z(&self) -> JFloat;
+    fn get_level(&self) -> Rc<RefCell<Level>>;
+    fn get_bb(&self) -> &AABB;
+
+    fn is_lit(&self) -> JBoolean {
+        let x_tile = self.get_x() as JInt;
+        let y_tile = self.get_y() as JInt;
+        let z_tile = self.get_z() as JInt;
+        self.get_level().borrow_mut().is_lit(x_tile, y_tile, z_tile)
+    }
 }
 
 impl Entity {
@@ -153,12 +168,34 @@ impl Entity {
     }
 }
 
-impl EntityTrait for Entity {}
+impl EntityTrait for Entity {
+    fn is_removed(&self) -> JBoolean {
+        self.removed
+    }
 
-impl Tickable for Entity {
+    fn get_x(&self) -> JFloat {
+        self.x
+    }
+
+    fn get_y(&self) -> JFloat {
+        self.y
+    }
+
+    fn get_z(&self) -> JFloat {
+        self.z
+    }
+
+    fn get_level(&self) -> Rc<RefCell<Level>> {
+        self.level.clone()
+    }
+
     fn tick(&mut self) {
         self.xo = self.x;
         self.yo = self.y;
         self.zo = self.z;
+    }
+
+    fn get_bb(&self) -> &AABB {
+        &self.bb
     }
 }

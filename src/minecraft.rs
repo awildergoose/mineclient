@@ -2,10 +2,12 @@ use std::{cell::RefCell, rc::Rc, sync::atomic::Ordering};
 
 use crate::{
     character::zombie::Zombie,
+    entity::EntityTrait,
     gl::{
         self,
         types::{GLdouble, GLenum, GLint, GLubyte},
     },
+    gui::font::Font,
     hit_result::HitResult,
     java::{
         JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse,
@@ -17,7 +19,7 @@ use crate::{
     player::Player,
     renderer::{level_renderer::LevelRenderer, textures::Textures},
     timer::Timer,
-    traits::{Drawable, Tickable},
+    traits::Tickable,
 };
 
 unsafe extern "C" {
@@ -51,11 +53,14 @@ pub struct Minecraft {
     viewport_buffer: [i32; 16],
     select_buffer: [i32; 2000],
     hit_result: Option<HitResult>,
-    zombies: Vec<Zombie>,
+    entities: Vec<Box<dyn EntityTrait>>,
     paint_texture: JInt,
     particle_engine: Option<ParticleEngine>,
+    font: Option<Rc<RefCell<Font>>>,
     pub textures: Rc<RefCell<Textures>>,
 }
+
+pub const VERSION_STRING: &str = "0.0.11a";
 
 impl Minecraft {
     pub fn new() -> Minecraft {
@@ -68,8 +73,9 @@ impl Minecraft {
             viewport_buffer: [0; 16],
             select_buffer: [0; 2000],
             timer: Timer::new(20.0),
-            zombies: Vec::new(),
+            entities: Vec::new(),
             textures: Rc::new(RefCell::new(Textures::new())),
+            font: None,
             level: None,
             level_renderer: None,
             player: None,
@@ -137,13 +143,17 @@ impl Minecraft {
             self.textures.clone(),
             self.level_renderer.as_ref().unwrap().borrow().t.clone(),
         ));
+        self.font = Some(Rc::new(RefCell::new(Font::new(
+            "default.gif",
+            self.textures.clone(),
+        ))));
 
         grab_mouse();
 
         for _i in 0..10 {
             let mut zombie = Zombie::new(level.clone(), self.textures.clone(), 128.0, 0.0, 128.0);
             zombie.reset_pos();
-            self.zombies.push(zombie);
+            self.entities.push(Box::new(zombie));
         }
     }
 
@@ -199,20 +209,20 @@ impl Minecraft {
             self.paint_texture = 6;
         } else if is_key_down(glfw::Key::G) {
             let player = self.player.as_ref().unwrap();
-            self.zombies.push(Zombie::new(
+            self.entities.push(Box::new(Zombie::new(
                 self.level.as_ref().unwrap().clone(),
                 self.textures.clone(),
                 player.x,
                 player.y,
                 player.z,
-            ));
+            )));
         }
 
         self.particle_engine.as_mut().unwrap().tick();
         self.level.as_mut().unwrap().borrow_mut().tick();
 
-        self.zombies.iter_mut().for_each(|z| z.tick());
-        self.zombies.retain(|z| !z.removed);
+        self.entities.iter_mut().for_each(|z| z.tick());
+        self.entities.retain(|z| !z.is_removed());
         self.player.as_mut().unwrap().tick();
     }
 
@@ -408,8 +418,8 @@ impl Minecraft {
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 0);
 
-            for z in &mut self.zombies {
-                if z.is_lit() && frustum.lock().unwrap().is_visible(&z.bb) {
+            for z in &mut self.entities {
+                if z.is_lit() && frustum.lock().unwrap().is_visible(z.get_bb()) {
                     z.render(a);
                 }
             }
@@ -425,8 +435,8 @@ impl Minecraft {
                 .borrow_mut()
                 .render(self.player.as_ref().unwrap(), 1);
 
-            for z in &mut self.zombies {
-                if !z.is_lit() && frustum.lock().unwrap().is_visible(&z.bb) {
+            for z in &mut self.entities {
+                if !z.is_lit() && frustum.lock().unwrap().is_visible(z.get_bb()) {
                     z.render(a);
                 }
             }
