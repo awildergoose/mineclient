@@ -218,8 +218,10 @@ impl Level {
         for x in x0..x1 {
             for y in y0..y1 {
                 for z in z0..z1 {
-                    if let Some(tile) = get_tile(self.get_tile(x, y, z)) {
-                        aabbs.push(tile.get_aabb(x, y, z));
+                    if let Some(tile) = get_tile(self.get_tile(x, y, z))
+                        && let Some(aabb) = tile.get_aabb(x, y, z)
+                    {
+                        aabbs.push(aabb);
                     }
                 }
             }

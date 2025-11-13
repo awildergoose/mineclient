@@ -85,11 +85,11 @@ pub trait TileTrait: Send + Sync {
         AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
     }
 
-    fn get_aabb(&self, x: JInt, y: JInt, z: JInt) -> AABB {
+    fn get_aabb(&self, x: JInt, y: JInt, z: JInt) -> Option<AABB> {
         let x = x as f32;
         let y = y as f32;
         let z = z as f32;
-        AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0)
+        Some(AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0))
     }
 
     fn render(&self, t: &mut Tesselator, level: &Level, layer: JInt, x: JInt, y: JInt, z: JInt) {
