@@ -15,20 +15,18 @@
 -   Player
 -   Entity
 -   MinecraftApplet
-
-# partial (working but unfinished)
-
--   level/Level
--   level/PerlinNoiseFilter
--   RubyDung
-
-# incomplete
-
 -   level/tile/Bush
 -   level/tile/DirtTile
 -   level/tile/GrassTile
 -   particle/Particle
 -   particle/ParticleEngine
+-   level/Level
+-   level/PerlinNoiseFilter
+-   RubyDung
+
+# partial (working but unfinished)
+
+# incomplete
 
 # rust stuff
 
