@@ -9,7 +9,7 @@ use crate::{
     hit_result::HitResult,
     java::{
         JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse,
-        init_display, is_display_close_requested, is_key_down, is_mouse_button_down,
+        init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
         update_display,
     },
     level::{chunk, frustum, level::Level, level_renderer::LevelRenderer, tile::tile::get_tile},
@@ -324,7 +324,7 @@ impl RubyDung {
         self.pick(a);
 
         let hito = self.hit_result.as_mut();
-        if is_mouse_button_down(1)
+        if is_mouse_button_just_pressed(1)
             && let Some(ref hit) = hito
         {
             let binding = self.level.as_mut().unwrap();
@@ -348,7 +348,7 @@ impl RubyDung {
             }
         }
 
-        if is_mouse_button_down(0)
+        if is_mouse_button_just_pressed(0)
             && let Some(ref hit) = hito
         {
             let mut x = hit.x;

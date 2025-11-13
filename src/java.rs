@@ -2,9 +2,9 @@ use glfw::{Action, Context, CursorMode, GlfwReceiver, Key, MouseButton, WindowEv
 use lazy_static::lazy_static;
 use rand::Rng;
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Instant;
 
 use crate::gl;
@@ -58,6 +58,9 @@ lazy_static! {
     static ref MOUSE_POS: Mutex<(f64, f64, f64, f64)> = Mutex::new((0.0, 0.0, 0.0, 0.0));
     static ref MOUSE_GRABBED: AtomicBool = AtomicBool::new(false);
     static ref DISPLAY_CLOSE_FLAG: AtomicBool = AtomicBool::new(false);
+    static ref FRAME_COUNTER: AtomicU64 = AtomicU64::new(0);
+    static ref LAST_PRESSED_KEYS: Mutex<HashMap<Key, u64>> = Mutex::new(HashMap::new());
+    static ref LAST_PRESSED_MOUSE: Mutex<HashMap<u8, u64>> = Mutex::new(HashMap::new());
 }
 
 pub fn is_key_down(key: Key) -> bool {
@@ -68,6 +71,18 @@ pub fn is_key_down(key: Key) -> bool {
 pub fn is_mouse_button_down(button: u8) -> bool {
     let set = PRESSED_MOUSE.lock().unwrap();
     set.contains(&button)
+}
+
+pub fn is_key_just_pressed(key: Key) -> bool {
+    let frame = FRAME_COUNTER.load(Ordering::SeqCst);
+    let map = LAST_PRESSED_KEYS.lock().unwrap();
+    map.get(&key).is_some_and(|&f| f == frame)
+}
+
+pub fn is_mouse_button_just_pressed(button: u8) -> bool {
+    let frame = FRAME_COUNTER.load(Ordering::SeqCst);
+    let map = LAST_PRESSED_MOUSE.lock().unwrap();
+    map.get(&button).is_some_and(|&f| f == frame)
 }
 
 pub fn get_mouse_dx() -> JFloat {
@@ -85,8 +100,15 @@ pub fn get_mouse_dy() -> JFloat {
 }
 
 pub fn handle_key_event(key: Key, pressed: bool) {
+    let frame = FRAME_COUNTER.load(Ordering::SeqCst);
     let mut set = PRESSED_KEYS.lock().unwrap();
+
     if pressed {
+        if !set.contains(&key) {
+            let mut last = LAST_PRESSED_KEYS.lock().unwrap();
+            last.insert(key, frame);
+        }
+
         set.insert(key);
     } else {
         set.remove(&key);
@@ -94,8 +116,15 @@ pub fn handle_key_event(key: Key, pressed: bool) {
 }
 
 pub fn handle_mouse_button(button: u8, pressed: bool) {
+    let frame = FRAME_COUNTER.load(Ordering::SeqCst);
     let mut set = PRESSED_MOUSE.lock().unwrap();
+
     if pressed {
+        if !set.contains(&button) {
+            let mut last = LAST_PRESSED_MOUSE.lock().unwrap();
+            last.insert(button, frame);
+        }
+
         set.insert(button);
     } else {
         set.remove(&button);
@@ -153,6 +182,8 @@ pub fn init_display(width: JInt, height: JInt) {
 }
 
 pub fn update_display() {
+    FRAME_COUNTER.fetch_add(1, Ordering::SeqCst);
+
     WINDOW_CTX.with(|ctx_cell| {
         let mut ctx_opt = ctx_cell.borrow_mut();
         let ctx = match ctx_opt.as_mut() {
