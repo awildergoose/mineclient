@@ -5,6 +5,7 @@ use crate::minecraft::Minecraft;
 pub mod character;
 pub mod entity;
 pub mod gl;
+pub mod gui;
 pub mod hit_result;
 pub mod java;
 pub mod level;

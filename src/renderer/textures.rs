@@ -27,6 +27,7 @@ pub fn resolve_texture(name: &str) -> ImageResult<DynamicImage> {
     match name {
         "terrain.png" => image::load_from_memory(include_bytes!("../../assets/terrain.png")),
         "char.png" => image::load_from_memory(include_bytes!("../../assets/char.png")),
+        "default.gif" => image::load_from_memory(include_bytes!("../../assets/default.gif")),
         _ => panic!("tried to resolve unknown texture: {}", name),
     }
 }

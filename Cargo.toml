@@ -7,7 +7,10 @@ edition = "2024"
 flate2 = "1.1.5"
 glfw = { version = "0.60.0", features = ["static-link"] }
 glutin = "0.32.3"
-image = { version = "0.25.8", default-features = false, features = ["png"] }
+image = { version = "0.25.8", default-features = false, features = [
+    "png",
+    "gif",
+] }
 javarandom = "0.2.1"
 lazy_static = "1.5.0"
 rand = "0.9.2"
