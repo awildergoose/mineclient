@@ -328,14 +328,23 @@ impl RubyDung {
             && let Some(ref hit) = hito
         {
             let binding = self.level.as_mut().unwrap();
-            let mut level = binding.borrow_mut();
-            let mut old_tile = get_tile(level.get_tile(hit.x, hit.y, hit.z));
-            let changed = level.set_tile(hit.x, hit.y, hit.z, 0);
+            let old_type = binding.borrow().get_tile(hit.x, hit.y, hit.z);
 
-            if let Some(otile) = old_tile.as_mut()
+            let changed = {
+                let mut level = binding.borrow_mut();
+                level.set_tile(hit.x, hit.y, hit.z, 0)
+            };
+
+            if let Some(otile) = get_tile(old_type).as_mut()
                 && changed
             {
-                otile.destroy(&mut level, hit.x, hit.y, hit.z); //, self.particle_engine);
+                otile.destroy(
+                    binding.clone(),
+                    hit.x,
+                    hit.y,
+                    hit.z,
+                    self.particle_engine.as_mut().unwrap(),
+                );
             }
         }
 

@@ -125,7 +125,7 @@ impl Cube {
         unsafe {
             self.list = gl::GenLists(1);
             gl::NewList(self.list, 4864); // TODO resolve gl
-            gl::Begin(7); // TODO resolve gl
+            gl::Begin(gl::QUADS);
 
             for p in &self.polygons {
                 p.render();

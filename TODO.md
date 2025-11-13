@@ -29,3 +29,7 @@
 -   level/tile/GrassTile
 -   particle/Particle
 -   particle/ParticleEngine
+
+# rust stuff
+
+-   remove all usages of Mutex and instead use RefCell to prevent deadlocks

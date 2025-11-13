@@ -1,6 +1,9 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     java::{JFloat, JInt},
     level::level::Level,
+    particle::particle_engine::ParticleEngine,
 };
 
 pub trait Tickable {
@@ -24,6 +27,12 @@ pub trait TickableTile {
 }
 
 pub trait TileDestructionEvent {
-    // TODO add particle engine arg
-    fn destroy(&self, level: &mut Level, x: JInt, y: JInt, z: JInt);
+    fn destroy(
+        &self,
+        level: Rc<RefCell<Level>>,
+        x: JInt,
+        y: JInt,
+        z: JInt,
+        particle_engine: &mut ParticleEngine,
+    );
 }

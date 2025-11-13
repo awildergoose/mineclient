@@ -1,6 +1,9 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     java::{JBoolean, JInt},
     level::{level::Level, tesselator::Tesselator},
+    particle::{particle::Particle, particle_engine::ParticleEngine},
     phys::aabb::AABB,
     traits::{TickableTile, TileDestructionEvent},
 };
@@ -244,5 +247,34 @@ impl TickableTile for Tile {
 }
 
 impl TileDestructionEvent for Tile {
-    fn destroy(&self, _level: &mut Level, _x: JInt, _y: JInt, _z: JInt) {}
+    fn destroy(
+        &self,
+        level: Rc<RefCell<Level>>,
+        x: JInt,
+        y: JInt,
+        z: JInt,
+        particle_engine: &mut ParticleEngine,
+    ) {
+        let sd = 4;
+
+        for xx in 0..sd {
+            for yy in 0..sd {
+                for zz in 0..sd {
+                    let xp = x as f32 + (xx as f32 + 0.5) / sd as f32;
+                    let yp = y as f32 + (yy as f32 + 0.5) / sd as f32;
+                    let zp = z as f32 + (zz as f32 + 0.5) / sd as f32;
+                    particle_engine.add(Particle::new(
+                        level.clone(),
+                        xp,
+                        yp,
+                        zp,
+                        xp - x as f32 - 0.5,
+                        yp - y as f32 - 0.5,
+                        zp - z as f32 - 0.5,
+                        self.tex,
+                    ));
+                }
+            }
+        }
+    }
 }
