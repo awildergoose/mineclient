@@ -4,11 +4,13 @@
 -   gui/Button.java
 -   renderer/Tesselator.java
 -   renderer/Textures.java
--   level/Chunk.java
 -   level/tile/Bush.java
 -   level/tile/Tile.java
 -   level/tile/GrassTile.java
+-   level/Chunk.java
 -   level/Coord.java
+-   level/DirtyChunkSorter.java
+-   level/DistanceSorter.java
 -   particle/ParticleEngine.java
 -   phys/AABB.java
 -   MinecraftApplet.java
@@ -33,8 +35,6 @@
 -   level/levelgen/LevelGen.java
 -   level/tile/CalmLiquidTile.java
 -   level/tile/LiquidTile.java
--   level/DirtyChunkSorter.java
--   level/DistanceSorter.java
 -   level/Level.java
 -   level/LevelIO.java
 -   level/LevelLoaderListener.java

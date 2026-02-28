@@ -97,6 +97,18 @@ pub fn is_mouse_button_just_pressed(button: u8) -> bool {
 }
 
 #[must_use]
+pub fn get_mouse_x() -> JFloat {
+    let pos = MOUSE_POS.lock().unwrap();
+    pos.0 as JFloat
+}
+
+#[must_use]
+pub fn get_mouse_y() -> JFloat {
+    let pos = MOUSE_POS.lock().unwrap();
+    pos.1 as JFloat
+}
+
+#[must_use]
 pub fn get_mouse_dx() -> JFloat {
     let mut pos = MOUSE_POS.lock().unwrap();
     let dx = pos.0 - pos.2;

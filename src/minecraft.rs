@@ -10,9 +10,9 @@ use crate::{
     gui::font::Font,
     hit_result::HitResult,
     java::{
-        JBoolean, JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy, grab_mouse,
-        init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
-        update_display,
+        JBoolean, JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy,
+        get_mouse_x, get_mouse_y, grab_mouse, init_display, is_display_close_requested,
+        is_key_down, is_mouse_button_just_pressed, update_display,
     },
     level::{chunk, frustum, level::Level, tile::tile::get_tile},
     particle::particle_engine::ParticleEngine,
@@ -495,7 +495,7 @@ impl Minecraft {
                 .as_mut()
                 .unwrap()
                 .borrow_mut()
-                .update_dirty_chunks(&frustum.lock().unwrap(), self.player.as_ref().unwrap());
+                .update_dirty_chunks(self.player.as_ref().unwrap());
             check_gl_error("Update chunks");
             self.setup_fog(0);
             gl::Enable(2912);
@@ -644,6 +644,10 @@ impl Minecraft {
         let mut t = binding.t.borrow_mut();
         let screen_width = self.width * 240 / self.height;
         let screen_height = self.height * 240 / self.height;
+        let _x_mouse = get_mouse_x() as f32 * screen_width as f32 / self.width as f32;
+        let _y_mouse = screen_height as f32
+            - get_mouse_y() as f32 * screen_height as f32 / self.height as f32
+            - 1.0;
 
         unsafe {
             gl::Clear(256);
@@ -662,12 +666,12 @@ impl Minecraft {
             gl::Translatef(0.0, 0.0, -200.0);
             check_gl_error("GUI: Init");
             gl::PushMatrix();
-            gl::Translatef((screen_width - 16) as f32, 16.0, 0.0);
+            gl::Translatef((screen_width - 16) as f32, 16.0, -50.0);
             gl::Scalef(16.0, 16.0, 16.0);
-            gl::Rotatef(30.0, 1.0, 0.0, 0.0);
+            gl::Rotatef(-30.0, 1.0, 0.0, 0.0);
             gl::Rotatef(45.0, 0.0, 1.0, 0.0);
-            gl::Translatef(-1.5, 0.5, -0.5);
-            gl::Scalef(-1.0, -1.0, 1.0);
+            gl::Translatef(-1.5, 0.5, 0.5);
+            gl::Scalef(-1.0, -1.0, -1.0);
             let id = self.textures.borrow_mut().load_texture("terrain.png", 9728);
             gl::BindTexture(3553, id);
             gl::Enable(3553);
@@ -708,20 +712,42 @@ impl Minecraft {
 
     fn setup_fog(&mut self, i: JInt) {
         unsafe {
-            if i == 0 {
+            let current_tile = get_tile(self.level.as_ref().unwrap().borrow().get_tile(
+                (self.player.as_ref().unwrap().x) as i32,
+                (self.player.as_ref().unwrap().y + 0.12) as i32,
+                (self.player.as_ref().unwrap().z) as i32,
+            ));
+
+            if let Some(tile) = current_tile
+                && tile.get_liquid_type() == 1
+            {
+                gl::Fogi(2917, 2048);
+                gl::Fogf(2914, 0.1);
+                gl::Fogfv(2918, Self::get_buffer(0.02, 0.02, 0.2, 1.0).as_mut_ptr());
+                gl::LightModelfv(2899, Self::get_buffer(0.3, 0.3, 0.7, 1.0).as_mut_ptr());
+            } else if let Some(tile) = current_tile
+                && tile.get_liquid_type() == 2
+            {
+                gl::Fogi(2917, 2048);
+                gl::Fogf(2914, 2.0);
+                gl::Fogfv(2918, Self::get_buffer(0.6, 0.1, 0.0, 1.0).as_mut_ptr());
+                gl::LightModelfv(2899, Self::get_buffer(0.4, 0.3, 0.3, 1.0).as_mut_ptr());
+            } else if i == 0 {
                 gl::Fogi(2917, 2048);
                 gl::Fogf(2914, 0.001);
                 gl::Fogfv(2918, self.fog_color_0.as_mut_ptr());
-                gl::Disable(2896);
+                gl::LightModelfv(2899, Self::get_buffer(1.0, 1.0, 1.0, 1.0).as_mut_ptr());
             } else if i == 1 {
                 gl::Fogi(2917, 2048);
-                gl::Fogf(2914, 0.06);
+                gl::Fogf(2914, 0.01);
                 gl::Fogfv(2918, self.fog_color_1.as_mut_ptr());
-                gl::Enable(2896);
-                gl::Enable(2903);
                 let br = 0.6;
                 gl::LightModelfv(2899, Self::get_buffer(br, br, br, 1.0).as_mut_ptr());
             }
+
+            gl::Enable(2903);
+            gl::ColorMaterial(1028, 4608);
+            gl::Enable(2896);
         }
     }
 

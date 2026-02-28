@@ -25,8 +25,8 @@ pub static MAX_REBUILDS_PER_FRAME: JInt = 4;
 pub struct LevelRenderer {
     level: Rc<RefCell<Level>>,
     textures: Rc<RefCell<Textures>>,
-    chunks: Vec<Chunk>,
-    sorted_chunks: Vec<Chunk>,
+    chunks: Vec<Rc<RefCell<Chunk>>>,
+    sorted_chunks: Vec<Rc<RefCell<Chunk>>>,
     x_chunks: JInt,
     y_chunks: JInt,
     z_chunks: JInt,
@@ -68,12 +68,12 @@ impl LevelRenderer {
         renderer
     }
 
-    pub fn get_all_dirty_chunks(&mut self) -> Vec<&mut Chunk> {
+    pub fn get_all_dirty_chunks(&mut self) -> Vec<Rc<RefCell<Chunk>>> {
         let mut dirty = Vec::new();
 
-        for c in &mut self.chunks {
-            if c.is_dirty() {
-                dirty.push(c);
+        for c in &self.chunks {
+            if c.borrow().is_dirty() {
+                dirty.push(c.clone());
             }
         }
 
@@ -94,10 +94,21 @@ impl LevelRenderer {
             self.l_x = player.x;
             self.l_y = player.y;
             self.l_z = player.z;
-            // Arrays.sort(this.sortedChunks, new DistanceSorter(player));
+            self.sorted_chunks.sort_by(|c0, c1| {
+                let c0 = c0.borrow();
+                let c1 = c1.borrow();
+
+                if c0.distance_to_sqr(player) < c1.distance_to_sqr(player) {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                }
+            });
         }
 
-        for chunk in &mut self.sorted_chunks {
+        for chunk in &self.sorted_chunks {
+            let mut chunk = chunk.borrow_mut();
+
             if chunk.visible {
                 let dd = (256 / (1 << self.draw_distance)) as f32;
 
@@ -251,35 +262,23 @@ impl LevelRenderer {
         }
     }
 
-    pub fn update_dirty_chunks(&mut self, frustum: &Frustum, player: &Player) {
+    pub fn update_dirty_chunks(&mut self, player: &Player) {
         let mut dirty = self.get_all_dirty_chunks();
         if dirty.is_empty() {
             return;
         }
 
-        let now = get_milli_time();
-
         dirty.sort_by(|c0, c1| {
-            let i0 = frustum.is_visible(&c0.aabb);
-            let i1 = frustum.is_visible(&c1.aabb);
+            let c0 = c0.borrow();
+            let c1 = c1.borrow();
+            let i0 = c0.visible;
+            let i1 = c1.visible;
 
             if i0 && !i1 {
-                return Ordering::Less;
+                Ordering::Less
             } else if i1 && !i0 {
-                return Ordering::Greater;
-            }
-
-            let t0 = ((now - c0.dirtied_time) / 2000) as i32;
-            let t1 = ((now - c1.dirtied_time) / 2000) as i32;
-            if t0 < t1 {
-                return Ordering::Less;
-            } else if t0 > t1 {
-                return Ordering::Greater;
-            }
-
-            let d0 = c0.distance_to_sqr(player);
-            let d1 = c1.distance_to_sqr(player);
-            if d0 < d1 {
+                Ordering::Greater
+            } else if c0.distance_to_sqr(player) < c1.distance_to_sqr(player) {
                 Ordering::Less
             } else {
                 Ordering::Greater
@@ -287,7 +286,7 @@ impl LevelRenderer {
         });
 
         for c in dirty.into_iter().take(MAX_REBUILDS_PER_FRAME as usize) {
-            c.rebuild_all();
+            c.borrow_mut().rebuild_all();
         }
     }
 
@@ -557,7 +556,7 @@ impl LevelRenderer {
             for y in y0..=y1 {
                 for z in z0..=z1 {
                     let idx = ((x * self.y_chunks + y) * self.z_chunks + z) as usize;
-                    self.chunks[idx].set_dirty();
+                    self.chunks[idx].borrow_mut().set_dirty();
                 }
             }
         }
@@ -576,7 +575,8 @@ impl LevelRenderer {
     }
 
     pub fn cull(&mut self, frustum: &Frustum) {
-        for chunk in &mut self.chunks {
+        for chunk in &self.chunks {
+            let mut chunk = chunk.borrow_mut();
             chunk.visible = frustum.is_visible(&chunk.aabb);
         }
     }
@@ -615,8 +615,8 @@ impl LevelRenderer {
                         z1 = lv_height;
                     }
 
-                    // TODO: don't clone Chunk
                     let c = Chunk::new(self.level.clone(), self.t.clone(), x0, y0, z0, x1, y1, z1);
+                    let c = Rc::new(RefCell::new(c));
                     self.chunks.push(c.clone());
                     self.sorted_chunks.push(c);
                 }
@@ -632,8 +632,8 @@ impl LevelRenderer {
             gl::EndList();
         }
 
-        for chunk in &mut self.chunks {
-            chunk.reset();
+        for chunk in &self.chunks {
+            chunk.borrow_mut().reset();
         }
     }
 }
