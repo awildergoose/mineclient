@@ -61,6 +61,7 @@ impl LevelRenderer {
         let adapter = LevelRendererListener {
             renderer: Rc::downgrade(&renderer),
         };
+        adapter.all_changed();
 
         level.borrow_mut().add_listener(Box::new(adapter));
 
@@ -120,7 +121,7 @@ impl LevelRenderer {
     pub fn compile_surrounding_ground(&self) {
         unsafe {
             gl::Enable(3553);
-            gl::BindTexture(3553, self.textures.borrow().load_texture("/rock.png", 9728));
+            gl::BindTexture(3553, self.textures.borrow().load_texture("rock.png", 9728));
             gl::Color4f(1.0, 1.0, 1.0, 1.0);
         }
         let mut t = self.t.borrow_mut();
@@ -156,7 +157,7 @@ impl LevelRenderer {
 
         t.end();
         unsafe {
-            gl::BindTexture(3553, self.textures.borrow().load_texture("/rock.png", 9728));
+            gl::BindTexture(3553, self.textures.borrow().load_texture("rock.png", 9728));
             gl::Color3f(0.8, 0.8, 0.8);
         }
         t.begin();
@@ -204,10 +205,7 @@ impl LevelRenderer {
         unsafe {
             gl::Enable(3553);
             gl::Color3f(1.0, 1.0, 1.0);
-            gl::BindTexture(
-                3553,
-                self.textures.borrow().load_texture("/water.png", 9728),
-            );
+            gl::BindTexture(3553, self.textures.borrow().load_texture("water.png", 9728));
         }
         let y = { self.level.borrow().get_ground_level() };
         unsafe {
@@ -441,6 +439,78 @@ impl LevelRenderer {
         }
     }
 
+    pub fn render_hit_outline(
+        &mut self,
+        _player: &Player,
+        h: &HitResult,
+        mode: JInt,
+        _tile_type: JInt,
+    ) {
+        unsafe {
+            gl::Enable(3042);
+            gl::BlendFunc(770, 771);
+            gl::Color4f(0.0, 0.0, 0.0, 0.4);
+        }
+
+        let mut x = h.x as f32;
+        let mut y = h.y as f32;
+        let mut z = h.z as f32;
+
+        if mode == 1 {
+            if h.f == 0 {
+                y -= 1.0;
+            }
+
+            if h.f == 1 {
+                y += 1.0;
+            }
+
+            if h.f == 2 {
+                z -= 1.0;
+            }
+
+            if h.f == 3 {
+                z += 1.0;
+            }
+
+            if h.f == 4 {
+                x -= 1.0;
+            }
+
+            if h.f == 5 {
+                x += 1.0;
+            }
+        }
+
+        unsafe {
+            gl::Begin(3);
+            gl::Vertex3f(x, y, z);
+            gl::Vertex3f(x + 1.0, y, z);
+            gl::Vertex3f(x + 1.0, y, z + 1.0);
+            gl::Vertex3f(x, y, z + 1.0);
+            gl::Vertex3f(x, y, z);
+            gl::End();
+            gl::Begin(3);
+            gl::Vertex3f(x, y + 1.0, z);
+            gl::Vertex3f(x + 1.0, y + 1.0, z);
+            gl::Vertex3f(x + 1.0, y + 1.0, z + 1.0);
+            gl::Vertex3f(x, y + 1.0, z + 1.0);
+            gl::Vertex3f(x, y + 1.0, z);
+            gl::End();
+            gl::Begin(1);
+            gl::Vertex3f(x, y, z);
+            gl::Vertex3f(x, y + 1.0, z);
+            gl::Vertex3f(x + 1.0, y, z);
+            gl::Vertex3f(x + 1.0, y + 1.0, z);
+            gl::Vertex3f(x + 1.0, y, z + 1.0);
+            gl::Vertex3f(x + 1.0, y + 1.0, z + 1.0);
+            gl::Vertex3f(x, y, z + 1.0);
+            gl::Vertex3f(x, y + 1.0, z + 1.0);
+            gl::End();
+            gl::Disable(3042);
+        }
+    }
+
     pub fn set_dirty(
         &mut self,
         mut x0: JInt,
@@ -499,6 +569,16 @@ impl LevelRenderer {
 
     pub fn on_light_column_changed(&mut self, x: JInt, z: JInt, y0: JInt, y1: JInt) {
         self.set_dirty(x - 1, y0 - 1, z - 1, x + 1, y1 + 1, z + 1);
+    }
+
+    pub const fn toggle_draw_distance(&mut self) {
+        self.draw_distance = (self.draw_distance + 1) % 4;
+    }
+
+    pub fn cull(&mut self, frustum: &Frustum) {
+        for chunk in &mut self.chunks {
+            chunk.visible = frustum.is_visible(&chunk.aabb);
+        }
     }
 
     pub fn on_all_changed(&mut self) {

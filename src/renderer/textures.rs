@@ -25,9 +25,13 @@ unsafe extern "C" {
 
 pub fn resolve_texture(name: &str) -> ImageResult<DynamicImage> {
     match name {
-        "terrain.png" => image::load_from_memory(include_bytes!("../../assets/terrain.png")),
         "char.png" => image::load_from_memory(include_bytes!("../../assets/char.png")),
         "default.gif" => image::load_from_memory(include_bytes!("../../assets/default.gif")),
+        "dirt.png" => image::load_from_memory(include_bytes!("../../assets/dirt.png")),
+        "grass.png" => image::load_from_memory(include_bytes!("../../assets/grass.png")),
+        "rock.png" => image::load_from_memory(include_bytes!("../../assets/rock.png")),
+        "terrain.png" => image::load_from_memory(include_bytes!("../../assets/terrain.png")),
+        "water.png" => image::load_from_memory(include_bytes!("../../assets/water.png")),
         _ => panic!("tried to resolve unknown texture: {name}"),
     }
 }
