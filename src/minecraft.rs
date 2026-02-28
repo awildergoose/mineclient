@@ -71,7 +71,7 @@ pub struct Minecraft {
     pub textures: Rc<RefCell<Textures>>,
 }
 
-pub const VERSION_STRING: &str = "0.0.11a";
+pub const VERSION_STRING: &str = "0.0.13a";
 
 impl Minecraft {
     #[must_use]
@@ -102,17 +102,11 @@ impl Minecraft {
     }
 
     pub fn init(&mut self) {
-        let col0 = 16_710_650;
         let col1 = 920_330;
         let fr = 0.5;
         let fg = 0.8;
         let fb = 1.0;
-        self.fog_color_0 = [
-            ((col0 >> 16) & 0xFF) as f32 / 255.0,
-            ((col0 >> 8) & 0xFF) as f32 / 255.0,
-            (col0 & 0xFF) as f32 / 255.0,
-            1.0,
-        ];
+        self.fog_color_0 = [fr, fg, fb, 1.0];
         self.fog_color_1 = [
             ((col1 >> 16) & 0xFF) as f32 / 255.0,
             ((col1 >> 8) & 0xFF) as f32 / 255.0,
@@ -147,6 +141,7 @@ impl Minecraft {
             gl::DepthFunc(gl::LEQUAL);
             gl::Enable(3008); // TODO gl constant
             gl::AlphaFunc(516, 0.0);
+            gl::CullFace(1029);
             gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
             gl::MatrixMode(gl::MODELVIEW);
@@ -293,7 +288,7 @@ impl Minecraft {
                 70.0,
                 f64::from(self.width) / f64::from(self.height),
                 0.05,
-                1000.0,
+                1024.0,
             );
             gl::MatrixMode(gl::MODELVIEW);
             gl::LoadIdentity();
@@ -320,7 +315,7 @@ impl Minecraft {
                 70.0,
                 f64::from(self.width) / f64::from(self.height),
                 0.05,
-                1000.0,
+                1024.0,
             );
             gl::MatrixMode(gl::MODELVIEW);
             gl::LoadIdentity();
@@ -462,6 +457,7 @@ impl Minecraft {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn render(&mut self, a: JFloat) {
         if is_mouse_button_just_pressed(0) {
             self.handle_mouse_click();
@@ -489,6 +485,12 @@ impl Minecraft {
             check_gl_error("Set up camera");
             gl::Enable(gl::CULL_FACE);
             let frustum = frustum::get_frustum();
+
+            {
+                let f = frustum.lock().unwrap();
+                self.level_renderer.as_mut().unwrap().borrow_mut().cull(&f);
+            }
+
             self.level_renderer
                 .as_mut()
                 .unwrap()
@@ -533,12 +535,14 @@ impl Minecraft {
                 .as_mut()
                 .unwrap()
                 .render(self.player.as_ref().unwrap(), a, 1);
-            gl::Disable(2896);
-            gl::Disable(gl::TEXTURE_2D);
-            gl::Disable(2912);
-            check_gl_error("Rendered rest");
 
-            if let Some(ref hit) = self.hit_result {
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render_surrounding_ground();
+            if let Some(hit) = &self.hit_result {
+                gl::Disable(2896);
                 gl::Disable(3008);
                 self.level_renderer
                     .as_mut()
@@ -550,11 +554,85 @@ impl Minecraft {
                         self.edit_mode,
                         self.paint_texture,
                     );
+                self.level_renderer
+                    .as_mut()
+                    .unwrap()
+                    .borrow_mut()
+                    .render_hit_outline(
+                        self.player.as_ref().unwrap(),
+                        hit,
+                        self.edit_mode,
+                        self.paint_texture,
+                    );
                 gl::Enable(3008);
+                gl::Enable(2896);
+            }
+
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render_surrounding_ground();
+
+            if self.hit_result.is_some() {
+                gl::Disable(2896);
+                gl::Disable(3008);
+            }
+
+            gl::BlendFunc(770, 771);
+            self.setup_fog(0);
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render_surrounding_water();
+            gl::Enable(3042);
+            gl::ColorMask(0, 0, 0, 0); // GL11.glColorMask(false, false, false, false);
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render(self.player.as_ref().unwrap(), 2);
+            gl::ColorMask(1, 1, 1, 1); // GL11.glColorMask(true, true, true, true);
+            self.level_renderer
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .render(self.player.as_ref().unwrap(), 2);
+
+            gl::Disable(3042);
+            gl::Disable(2896);
+            gl::Disable(gl::TEXTURE_2D);
+            gl::Disable(2912);
+
+            if let Some(ref hit) = self.hit_result {
+                gl::DepthFunc(513);
+                gl::Disable(3008);
+                self.level_renderer
+                    .as_mut()
+                    .unwrap()
+                    .borrow_mut()
+                    .render_hit(
+                        self.player.as_ref().unwrap(),
+                        hit,
+                        self.edit_mode,
+                        self.paint_texture,
+                    );
+                self.level_renderer
+                    .as_mut()
+                    .unwrap()
+                    .borrow_mut()
+                    .render_hit_outline(
+                        self.player.as_ref().unwrap(),
+                        hit,
+                        self.edit_mode,
+                        self.paint_texture,
+                    );
+                gl::Enable(3008);
+                gl::DepthFunc(515);
             }
         }
 
-        check_gl_error("Rendered hit");
         self.draw_gui(a);
         check_gl_error("Rendered gui");
         update_display();
