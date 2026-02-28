@@ -17,6 +17,7 @@ pub static UPDATES: AtomicI32 = AtomicI32::new(0);
 pub static TOTAL_TIME: AtomicI64 = AtomicI64::new(0);
 pub static TOTAL_UPDATES: AtomicI32 = AtomicI32::new(0);
 
+#[derive(Clone)]
 pub struct Chunk {
     pub aabb: AABB,
     pub level: Rc<RefCell<Level>>,
@@ -30,6 +31,7 @@ pub struct Chunk {
     pub y: JFloat,
     pub z: JFloat,
     pub dirtied_time: JLong,
+    pub visible: JBoolean,
     dirty: JBoolean,
     lists: u32,
     t: Rc<RefCell<Tesselator>>,
@@ -69,19 +71,20 @@ impl Chunk {
             z: (z0 + z1) as JFloat / 2.0,
             dirtied_time: 0,
             dirty: true,
-            lists: unsafe { gl::GenLists(2) },
+            visible: false,
+            lists: unsafe { gl::GenLists(3) },
         }
     }
 
     pub fn rebuild_all(&mut self) {
+        UPDATES.fetch_add(1, Ordering::SeqCst);
         self.rebuild(0);
         self.rebuild(1);
+        self.rebuild(2);
+        self.dirty = false;
     }
 
     pub fn rebuild(&mut self, layer: u32) {
-        self.dirty = false;
-        UPDATES.fetch_add(1, Ordering::SeqCst);
-
         let before = get_nano_time();
         unsafe { gl::NewList(self.lists + layer, gl::COMPILE) }
         let mut t = self.t.borrow_mut();
@@ -119,6 +122,17 @@ impl Chunk {
 
     pub fn render(&mut self, layer: u32) {
         unsafe { gl::CallList(self.lists + layer) };
+    }
+
+    pub fn reset(&mut self) {
+        self.dirty = true;
+
+        for i in 0..3 {
+            unsafe {
+                gl::NewList(self.lists + i, 4864);
+                gl::EndList();
+            }
+        }
     }
 
     pub fn set_dirty(&mut self) {

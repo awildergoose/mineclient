@@ -10,7 +10,7 @@ use crate::{
     java::{JFloat, JInt, get_milli_time},
     level::{
         chunk::Chunk,
-        frustum::{self, Frustum},
+        frustum::Frustum,
         level::Level,
         level_listener::LevelListener,
         tile::tile::{Tile, TileTrait, get_tile},
@@ -20,64 +20,42 @@ use crate::{
 };
 
 pub static CHUNK_SIZE: JInt = 16;
-pub static MAX_REBUILDS_PER_FRAME: JInt = 8;
+pub static MAX_REBUILDS_PER_FRAME: JInt = 4;
 
 pub struct LevelRenderer {
     level: Rc<RefCell<Level>>,
     textures: Rc<RefCell<Textures>>,
     chunks: Vec<Chunk>,
+    sorted_chunks: Vec<Chunk>,
     x_chunks: JInt,
     y_chunks: JInt,
     z_chunks: JInt,
+    surround_lists: u32,
+    draw_distance: JInt,
+    l_x: JFloat,
+    l_y: JFloat,
+    l_z: JFloat,
     pub t: Rc<RefCell<Tesselator>>,
 }
 
 impl LevelRenderer {
     pub fn new(level: Rc<RefCell<Level>>, textures: Rc<RefCell<Textures>>) -> Rc<RefCell<Self>> {
-        let width = level.borrow().width;
-        let height = level.borrow().height;
-        let depth = level.borrow().depth;
-
-        let x_chunks = width / 16;
-        let y_chunks = depth / 16;
-        let z_chunks = height / 16;
-        let mut chunks = Vec::new();
-
         let t = Rc::new(RefCell::new(Tesselator::new()));
-
-        for x in 0..x_chunks {
-            for y in 0..y_chunks {
-                for z in 0..z_chunks {
-                    let x0 = x * 16;
-                    let y0 = y * 16;
-                    let z0 = z * 16;
-                    let mut x1 = (x + 1) * 16;
-                    let mut y1 = (y + 1) * 16;
-                    let mut z1 = (z + 1) * 16;
-
-                    if x1 > width {
-                        x1 = width;
-                    }
-                    if y1 > depth {
-                        y1 = depth;
-                    }
-                    if z1 > height {
-                        z1 = height;
-                    }
-
-                    chunks.push(Chunk::new(level.clone(), t.clone(), x0, y0, z0, x1, y1, z1));
-                }
-            }
-        }
 
         let renderer = Rc::new(RefCell::new(Self {
             level: level.clone(),
-            chunks,
-            x_chunks,
-            y_chunks,
-            z_chunks,
             textures,
             t,
+            surround_lists: unsafe { gl::GenLists(2) },
+            x_chunks: 0,
+            y_chunks: 0,
+            z_chunks: 0,
+            chunks: vec![],
+            sorted_chunks: vec![],
+            draw_distance: 0,
+            l_x: 0.0,
+            l_y: 0.0,
+            l_z: 0.0,
         }));
 
         let adapter = LevelRendererListener {
@@ -101,22 +79,176 @@ impl LevelRenderer {
         dirty
     }
 
-    pub fn render(&mut self, _player: &Player, layer: u32) {
+    pub fn render(&mut self, player: &Player, layer: u32) {
         unsafe {
             gl::Enable(3553);
             let id = self.textures.borrow_mut().load_texture("terrain.png", 9728);
             gl::BindTexture(3553, id);
         };
 
-        let frustum = frustum::get_frustum();
+        let xd = player.x - self.l_x;
+        let yd = player.y - self.l_y;
+        let zd = player.z - self.l_z;
+        if zd.mul_add(zd, xd.mul_add(xd, yd * yd)) > 64.0 {
+            self.l_x = player.x;
+            self.l_y = player.y;
+            self.l_z = player.z;
+            // Arrays.sort(this.sortedChunks, new DistanceSorter(player));
+        }
 
-        for c in &mut self.chunks {
-            if frustum.lock().unwrap().is_visible(&c.aabb) {
-                c.render(layer);
+        for chunk in &mut self.sorted_chunks {
+            if chunk.visible {
+                let dd = (256 / (1 << self.draw_distance)) as f32;
+
+                if self.draw_distance == 0 || chunk.distance_to_sqr(player) < dd * dd {
+                    chunk.render(layer);
+                }
             }
         }
 
         unsafe {
+            gl::Disable(3553);
+        }
+    }
+
+    pub fn render_surrounding_ground(&self) {
+        unsafe {
+            gl::CallList(self.surround_lists);
+        }
+    }
+
+    pub fn compile_surrounding_ground(&self) {
+        unsafe {
+            gl::Enable(3553);
+            gl::BindTexture(3553, self.textures.borrow().load_texture("/rock.png", 9728));
+            gl::Color4f(1.0, 1.0, 1.0, 1.0);
+        }
+        let mut t = self.t.borrow_mut();
+        let y = { self.level.borrow().get_ground_level() - 2.0 };
+        let (lv_width, lv_height) = {
+            let lv = self.level.borrow();
+            (lv.width, lv.height)
+        };
+        let mut s = 128;
+        if s > lv_width {
+            s = lv_width;
+        }
+        if s > lv_height {
+            s = lv_height;
+        }
+        let d = 5;
+        t.begin();
+
+        for xx in (-s * d..lv_width + s * d).step_by(s as usize) {
+            for zz in (-s * d..lv_height + s * d).step_by(s as usize) {
+                let yy = if xx >= 0 && zz >= 0 && xx < lv_width && zz < lv_height {
+                    0.0
+                } else {
+                    y
+                };
+
+                t.vertex_uv(xx as f32, yy, (zz + s) as f32, 0.0, s as f32);
+                t.vertex_uv((xx + s) as f32, yy, (zz + s) as f32, s as f32, s as f32);
+                t.vertex_uv((xx + s) as f32, yy, zz as f32, s as f32, 0.0);
+                t.vertex_uv(xx as f32, yy, zz as f32, 0.0, 0.0);
+            }
+        }
+
+        t.end();
+        unsafe {
+            gl::BindTexture(3553, self.textures.borrow().load_texture("/rock.png", 9728));
+            gl::Color3f(0.8, 0.8, 0.8);
+        }
+        t.begin();
+
+        for xx in (0..lv_width).step_by(s as usize) {
+            t.vertex_uv(xx as f32, 0.0, 0.0, 0.0, 0.0);
+            t.vertex_uv((xx + s) as f32, 0.0, 0.0, s as f32, 0.0);
+            t.vertex_uv((xx + s) as f32, y, 0.0, s as f32, y);
+            t.vertex_uv(xx as f32, y, 0.0, 0.0, y);
+            t.vertex_uv(xx as f32, y, lv_height as f32, 0.0, y);
+            t.vertex_uv((xx + s) as f32, y, lv_height as f32, s as f32, y);
+            t.vertex_uv((xx + s) as f32, 0.0, lv_height as f32, s as f32, 0.0);
+            t.vertex_uv(xx as f32, 0.0, lv_height as f32, 0.0, 0.0);
+        }
+
+        unsafe {
+            gl::Color3f(0.6, 0.6, 0.6);
+        }
+
+        for zz in (0..lv_height).step_by(s as usize) {
+            t.vertex_uv(0.0, y, zz as f32, 0.0, 0.0);
+            t.vertex_uv(0.0, y, (zz + s) as f32, s as f32, 0.0);
+            t.vertex_uv(0.0, 0.0, (zz + s) as f32, s as f32, y);
+            t.vertex_uv(0.0, 0.0, zz as f32, 0.0, y);
+            t.vertex_uv(lv_width as f32, 0.0, zz as f32, 0.0, y);
+            t.vertex_uv(lv_width as f32, 0.0, (zz + s) as f32, s as f32, y);
+            t.vertex_uv(lv_width as f32, y, (zz + s) as f32, s as f32, 0.0);
+            t.vertex_uv(lv_width as f32, y, zz as f32, 0.0, 0.0);
+        }
+
+        t.end();
+        unsafe {
+            gl::Disable(3042);
+            gl::Disable(3553);
+        }
+    }
+
+    pub fn render_surrounding_water(&self) {
+        unsafe {
+            gl::CallList(self.surround_lists + 1);
+        }
+    }
+
+    pub fn compile_surrounding_water(&self) {
+        unsafe {
+            gl::Enable(3553);
+            gl::Color3f(1.0, 1.0, 1.0);
+            gl::BindTexture(
+                3553,
+                self.textures.borrow().load_texture("/water.png", 9728),
+            );
+        }
+        let y = { self.level.borrow().get_ground_level() };
+        unsafe {
+            gl::Enable(3042);
+            gl::BlendFunc(770, 771);
+        }
+        let mut t = self.t.borrow_mut();
+        let (lv_width, lv_height) = {
+            let lv = self.level.borrow();
+            (lv.width, lv.height)
+        };
+        let mut s = 128;
+        if s > lv_width {
+            s = lv_width;
+        }
+        if s > lv_height {
+            s = lv_height;
+        }
+        let d = 5;
+        t.begin();
+
+        for xx in (-s * d..lv_width + s * d).step_by(s as usize) {
+            for zz in (-s * d..lv_height + s * d).step_by(s as usize) {
+                let yy = y - 0.1;
+
+                if xx < 0 || zz < 0 || xx >= lv_width || zz >= lv_height {
+                    t.vertex_uv(xx as f32, yy, (zz + s) as f32, 0.0, s as f32);
+                    t.vertex_uv((xx + s) as f32, yy, (zz + s) as f32, s as f32, s as f32);
+                    t.vertex_uv((xx + s) as f32, yy, zz as f32, s as f32, 0.0);
+                    t.vertex_uv(xx as f32, yy, zz as f32, 0.0, 0.0);
+                    t.vertex_uv(xx as f32, yy, zz as f32, 0.0, 0.0);
+                    t.vertex_uv((xx + s) as f32, yy, zz as f32, s as f32, 0.0);
+                    t.vertex_uv((xx + s) as f32, yy, (zz + s) as f32, s as f32, s as f32);
+                    t.vertex_uv(xx as f32, yy, (zz + s) as f32, 0.0, s as f32);
+                }
+            }
+        }
+
+        t.end();
+        unsafe {
+            gl::Disable(3042);
             gl::Disable(3553);
         }
     }
@@ -163,7 +295,7 @@ impl LevelRenderer {
 
     pub fn pick(&mut self, player: &Player, frustum: &Frustum) {
         let mut t = self.t.borrow_mut();
-        let r = 3.0;
+        let r = 2.5;
         let pbox = player.bb.grow(r, r, r);
         let x0 = pbox.x0 as JInt;
         let x1 = pbox.x1 as JInt;
@@ -191,6 +323,7 @@ impl LevelRenderer {
 
                 for z in z0..z1 {
                     if let Some(tile) = get_tile(self.level.borrow_mut().get_tile(x, y, z))
+                        && tile.may_pick()
                         && frustum.is_visible(&tile.get_tile_aabb(x, y, z))
                     {
                         unsafe {
@@ -204,7 +337,7 @@ impl LevelRenderer {
                             }
 
                             t.begin();
-                            tile.render_face_no_texture(&mut t, x, y, z, i as i32);
+                            tile.render_face_no_texture(player, &mut t, x, y, z, i as i32);
                             t.end();
                         }
 
@@ -230,9 +363,10 @@ impl LevelRenderer {
         }
     }
 
-    pub fn render_hit(&mut self, h: &HitResult, mode: JInt, tile_type: JInt) {
+    pub fn render_hit(&mut self, player: &Player, h: &HitResult, mode: JInt, tile_type: JInt) {
         unsafe {
             gl::Enable(gl::BLEND);
+            gl::Enable(gl::ALPHA_TEST);
             gl::BlendFunc(gl::SRC_ALPHA, 1);
             gl::Color4f(
                 1.0,
@@ -244,7 +378,7 @@ impl LevelRenderer {
         let mut t = self.t.borrow_mut();
         if mode == 0 {
             t.begin();
-            Tile::ROCK.render_face_no_texture(&mut t, h.x, h.y, h.z, h.f);
+            Tile::ROCK.render_face_no_texture(player, &mut t, h.x, h.y, h.z, h.f);
             t.end();
         } else {
             unsafe {
@@ -303,6 +437,7 @@ impl LevelRenderer {
 
         unsafe {
             gl::Disable(gl::BLEND);
+            gl::Disable(gl::ALPHA_TEST);
         }
     }
 
@@ -367,12 +502,59 @@ impl LevelRenderer {
     }
 
     pub fn on_all_changed(&mut self) {
-        let (w, d, h) = {
+        self.l_x = -900_000.0;
+        self.l_y = -900_000.0;
+        self.l_z = -900_000.0;
+        let (lv_width, lv_depth, lv_height) = {
             let level = self.level.borrow();
             (level.width, level.depth, level.height)
         };
+        self.x_chunks = (lv_width + 16 - 1) / 16;
+        self.y_chunks = (lv_depth + 16 - 1) / 16;
+        self.z_chunks = (lv_height + 16 - 1) / 16;
+        self.chunks = vec![];
+        self.sorted_chunks = vec![];
 
-        self.set_dirty(0, 0, 0, w, d, h);
+        for x in 0..self.x_chunks {
+            for y in 0..self.y_chunks {
+                for z in 0..self.z_chunks {
+                    let x0 = x * 16;
+                    let y0 = y * 16;
+                    let z0 = z * 16;
+                    let mut x1 = (x + 1) * 16;
+                    let mut y1 = (y + 1) * 16;
+                    let mut z1 = (z + 1) * 16;
+
+                    if x1 > lv_width {
+                        x1 = lv_width;
+                    }
+                    if y1 > lv_depth {
+                        y1 = lv_depth;
+                    }
+                    if z1 > lv_height {
+                        z1 = lv_height;
+                    }
+
+                    // TODO: don't clone Chunk
+                    let c = Chunk::new(self.level.clone(), self.t.clone(), x0, y0, z0, x1, y1, z1);
+                    self.chunks.push(c.clone());
+                    self.sorted_chunks.push(c);
+                }
+            }
+        }
+
+        unsafe {
+            gl::NewList(self.surround_lists, 4864);
+            self.compile_surrounding_ground();
+            gl::EndList();
+            gl::NewList(self.surround_lists + 1, 4864);
+            self.compile_surrounding_water();
+            gl::EndList();
+        }
+
+        for chunk in &mut self.chunks {
+            chunk.reset();
+        }
     }
 }
 

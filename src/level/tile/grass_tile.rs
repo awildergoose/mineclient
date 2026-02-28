@@ -1,4 +1,10 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    cell::RefCell,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
+
+use javarandom::JavaRandom;
 
 use crate::level::tile::tile::{Tile, TileTrait};
 
@@ -8,7 +14,7 @@ pub struct GrassTile {
 
 impl GrassTile {
     pub const TILE: Self = Self {
-        base: Tile { tex: 3, id: 2 },
+        base: Tile::new_ticking(2, 3),
     };
 }
 
@@ -27,6 +33,19 @@ impl DerefMut for GrassTile {
 }
 
 impl TileTrait for GrassTile {
+    fn bounds(
+        &self,
+    ) -> (
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+    ) {
+        self.base.bounds()
+    }
+
     fn get_texture(&self, face: crate::java::JInt) -> crate::java::JInt {
         if face == 1 {
             0
@@ -43,23 +62,23 @@ impl TileTrait for GrassTile {
         x: crate::java::JInt,
         y: crate::java::JInt,
         z: crate::java::JInt,
+        random: Rc<RefCell<JavaRandom>>,
     ) {
-        if level.is_lit(x, y, z) {
-            for _ in 0..4 {
-                let (xt, yt, zt) = {
-                    let mut random = level.random.borrow_mut();
+        let mut random = random.borrow_mut();
+        if random.next_int_with_bound(4) == 0 {
+            if level.is_lit(x, y + 1, z) {
+                for _ in 0..4 {
                     let xt = x + random.next_int_with_bound(3) - 1;
                     let yt = y + random.next_int_with_bound(5) - 3;
                     let zt = z + random.next_int_with_bound(3) - 1;
-                    (xt, yt, zt)
-                };
 
-                if level.get_tile(xt, yt, zt) == Tile::DIRT.id && level.is_lit(xt, yt, zt) {
-                    level.set_tile(xt, yt, zt, Tile::GRASS.id);
+                    if level.get_tile(xt, yt, zt) == Tile::DIRT.id && level.is_lit(xt, yt + 1, zt) {
+                        level.set_tile(xt, yt, zt, Tile::GRASS.id);
+                    }
                 }
+            } else {
+                level.set_tile(x, y, z, Tile::DIRT.id);
             }
-        } else {
-            level.set_tile(x, y, z, Tile::DIRT.id);
         }
     }
 }

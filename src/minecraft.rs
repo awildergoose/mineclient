@@ -544,7 +544,12 @@ impl Minecraft {
                     .as_mut()
                     .unwrap()
                     .borrow_mut()
-                    .render_hit(hit, self.edit_mode, self.paint_texture);
+                    .render_hit(
+                        self.player.as_ref().unwrap(),
+                        hit,
+                        self.edit_mode,
+                        self.paint_texture,
+                    );
                 gl::Enable(3008);
             }
         }

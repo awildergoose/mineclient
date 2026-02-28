@@ -2,8 +2,14 @@
 
 -   gui/Font.java
 -   renderer/Tesselator.java
+-   level/Chunk.java
+-   level/tile/Bush.java
+-   level/tile/Tile.java
+-   level/tile/GrassTile.java
 
 # partial (working but unfinished)
+
+-   level/LevelRenderer.java
 
 # incomplete
 
@@ -18,19 +24,14 @@
 -   level/levelgen/synth/Scale.java
 -   level/levelgen/synth/Synth.java
 -   level/levelgen/LevelGen.java
--   level/tile/Bush.java
 -   level/tile/CalmLiquidTile.java
--   level/tile/GrassTile.java
 -   level/tile/LiquidTile.java
--   level/tile/Tile.java
--   level/Chunk.java
 -   level/Coord.java
 -   level/DirtyChunkSorter.java
 -   level/DistanceSorter.java
 -   level/Level.java
 -   level/LevelIO.java
 -   level/LevelLoaderListener.java
--   level/LevelRenderer.java
 -   particle/ParticleEngine.java
 -   phys/AABB.java
 -   renderer/Textures.java

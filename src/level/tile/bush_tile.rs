@@ -1,7 +1,11 @@
 use std::{
+    cell::RefCell,
     f32::consts::PI,
     ops::{Deref, DerefMut},
+    rc::Rc,
 };
+
+use javarandom::JavaRandom;
 
 use crate::level::tile::tile::{Tile, TileTrait};
 
@@ -11,7 +15,7 @@ pub struct BushTile {
 
 impl BushTile {
     pub const TILE: Self = Self {
-        base: Tile { tex: 15, id: 6 },
+        base: Tile::new_ticking(6, 15),
     };
 }
 
@@ -30,6 +34,19 @@ impl DerefMut for BushTile {
 }
 
 impl TileTrait for BushTile {
+    fn bounds(
+        &self,
+    ) -> (
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+    ) {
+        self.base.bounds()
+    }
+
     fn get_texture(&self, _face: crate::java::JInt) -> crate::java::JInt {
         self.base.tex
     }
@@ -40,6 +57,7 @@ impl TileTrait for BushTile {
         x: crate::java::JInt,
         y: crate::java::JInt,
         z: crate::java::JInt,
+        _random: Rc<RefCell<JavaRandom>>,
     ) {
         let below = level.get_tile(x, y - 1, z);
         if !level.is_lit(x, y, z) || below != Tile::DIRT.id && below != Tile::GRASS.id {

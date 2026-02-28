@@ -5,7 +5,7 @@ use javarandom::JavaRandom;
 use std::io::Write;
 
 use crate::{
-    java::{JBoolean, JByte, JInt},
+    java::{JBoolean, JByte, JFloat, JInt},
     level::{level_gen::LevelGen, level_listener::LevelListener, tile::tile::get_tile},
     phys::aabb::AABB,
 };
@@ -80,6 +80,11 @@ impl Level {
         encoder.finish()?;
 
         Ok(())
+    }
+
+    #[must_use]
+    pub const fn get_ground_level(&self) -> JFloat {
+        32.0
     }
 
     pub fn calc_light_depths(&mut self, x0: JInt, y0: JInt, x1: JInt, y1: JInt) {
@@ -227,8 +232,8 @@ impl Level {
 
     pub fn tick(&mut self) {
         self.unprocessed += self.width * self.height * self.depth;
-        let ticks = self.unprocessed / 400;
-        self.unprocessed -= ticks * 400;
+        let ticks = self.unprocessed / 200;
+        self.unprocessed -= ticks * 200;
 
         let w = self.width as u32;
         let d = self.depth as u32;
@@ -246,7 +251,7 @@ impl Level {
             let tile_id = self.get_tile(x, y, z);
 
             if let Some(tile) = get_tile(tile_id) {
-                tile.tick(self, x, y, z);
+                tile.tick(self, x, y, z, self.random.clone());
             }
         }
     }

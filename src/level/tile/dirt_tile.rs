@@ -8,7 +8,7 @@ pub struct DirtTile {
 
 impl DirtTile {
     pub const TILE: Self = Self {
-        base: Tile { tex: 2, id: 3 },
+        base: Tile::new(3, 2),
     };
 }
 
@@ -27,6 +27,19 @@ impl DerefMut for DirtTile {
 }
 
 impl TileTrait for DirtTile {
+    fn bounds(
+        &self,
+    ) -> (
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+        crate::java::JFloat,
+    ) {
+        self.base.bounds()
+    }
+
     fn get_texture(&self, _face: crate::java::JInt) -> crate::java::JInt {
         self.base.tex
     }
