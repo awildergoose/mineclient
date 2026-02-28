@@ -15,11 +15,16 @@ pub struct LevelGen {
 }
 
 impl LevelGen {
-    pub fn new(random: Rc<RefCell<JavaRandom>>, width: JInt, height: JInt, depth: JInt) -> Self {
+    pub const fn new(
+        random: Rc<RefCell<JavaRandom>>,
+        width: JInt,
+        height: JInt,
+        depth: JInt,
+    ) -> Self {
         Self {
             width,
-            depth,
             height,
+            depth,
             random,
         }
     }
@@ -45,10 +50,7 @@ impl LevelGen {
                         dh2 = dh1;
                     }
 
-                    let mut dh = dh1;
-                    if dh2 > dh1 {
-                        dh = dh2;
-                    }
+                    let mut dh = if dh2 > dh1 { dh2 } else { dh1 };
 
                     dh = dh / 8 + d / 3;
                     let mut rh = rock_map[(x + z * self.width) as usize] / 8 + d / 3;
@@ -57,19 +59,15 @@ impl LevelGen {
                     }
 
                     let i = (y * self.height + z) * self.width + x;
-                    let mut id = 0;
-
-                    if y == dh {
-                        id = Tile::GRASS.id;
-                    }
-
-                    if y < dh {
-                        id = Tile::DIRT.id;
-                    }
-
-                    if y <= rh {
-                        id = Tile::ROCK.id;
-                    }
+                    let id = if y == dh {
+                        Tile::GRASS.id
+                    } else if y < dh {
+                        Tile::DIRT.id
+                    } else if y <= rh {
+                        Tile::ROCK.id
+                    } else {
+                        0
+                    };
 
                     blocks[i as usize] = id as JByte;
                 }
@@ -82,7 +80,7 @@ impl LevelGen {
             let mut x = (random.next_float() * w as f32) as i32;
             let mut y = (random.next_float() * d as f32) as i32;
             let mut z = (random.next_float() * h as f32) as i32;
-            let length = (random.next_float() + random.next_float() * 150.0) as JInt;
+            let length = random.next_float().mul_add(150.0, random.next_float()) as JInt;
             let mut dir1 = random.next_float() * PI * 2.0;
             let mut dira1 = 0.0;
             let mut dir2 = random.next_float() * PI * 2.0;

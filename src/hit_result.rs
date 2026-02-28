@@ -7,7 +7,8 @@ pub struct HitResult {
 }
 
 impl HitResult {
-    pub fn new(type_: i32, x: i32, y: i32, z: i32, f: i32) -> HitResult {
+    #[must_use]
+    pub const fn new(type_: i32, x: i32, y: i32, z: i32, f: i32) -> Self {
         Self { type_, x, y, z, f }
     }
 }

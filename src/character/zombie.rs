@@ -45,18 +45,18 @@ impl Zombie {
         let mut base = Entity::new(level);
         base.set_pos(x, y, z);
 
-        let time_offs = math_random() * 1239813.0;
+        let time_offs = math_random() * 1_239_813.0;
         let rot = math_random() * PI * 2.0;
         let rot_a = (math_random() + 1.0) * 0.01;
         let speed = 1.0;
 
         Self {
             base,
-            rot,
-            rot_a,
-            speed,
-            time_offs,
             textures,
+            rot,
+            time_offs,
+            speed,
+            rot_a,
         }
     }
 }
@@ -118,16 +118,16 @@ impl EntityTrait for Zombie {
             );
             gl::PushMatrix();
 
-            let time: f64 =
-                get_nano_time() as f64 / 1.0E9 * 10.0 * self.speed as f64 + self.time_offs as f64;
+            let time: f64 = (get_nano_time() as f64 / 1.0E9 * 10.0)
+                .mul_add(f64::from(self.speed), f64::from(self.time_offs));
 
-            let size: f32 = 0.058333334_f32;
-            let yy: f32 = (-(time * 0.6662).sin().abs() * 5.0 - 23.0) as f32;
+            let size: f32 = 0.058_333_334_f32;
+            let yy: f32 = (-(time * 0.6662).sin().abs()).mul_add(5.0, -23.0) as f32;
 
             gl::Translatef(
-                self.xo + (self.x - self.xo) * a,
-                self.yo + (self.y - self.yo) * a,
-                self.zo + (self.z - self.zo) * a,
+                (self.x - self.xo).mul_add(a, self.xo),
+                (self.y - self.yo).mul_add(a, self.yo),
+                (self.z - self.zo).mul_add(a, self.zo),
             );
 
             gl::Scalef(1.0_f32, -1.0_f32, 1.0_f32);
@@ -135,7 +135,7 @@ impl EntityTrait for Zombie {
             gl::Translatef(0.0_f32, yy, 0.0_f32);
 
             let c: f64 = 180.0 / std::f64::consts::PI;
-            let angle: f32 = (self.rot as f64 * c + 180.0) as f32;
+            let angle: f32 = f64::from(self.rot).mul_add(c, 180.0) as f32;
             gl::Rotatef(angle, 0.0_f32, 1.0_f32, 0.0_f32);
             get_model().render(time);
             gl::PopMatrix();

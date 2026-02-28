@@ -1,4 +1,4 @@
-use std::{cell::RefCell, f32::consts::PI, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     gl,
@@ -7,7 +7,6 @@ use crate::{
     particle::particle::Particle,
     player::Player,
     renderer::{tesselator::Tesselator, textures::Textures},
-    traits::Tickable,
 };
 
 pub struct ParticleEngine {
@@ -19,7 +18,7 @@ pub struct ParticleEngine {
 }
 
 impl ParticleEngine {
-    pub fn new(
+    pub const fn new(
         level: Rc<RefCell<Level>>,
         textures: Rc<RefCell<Textures>>,
         t: Rc<RefCell<Tesselator>>,
@@ -37,7 +36,7 @@ impl ParticleEngine {
     }
 
     pub fn tick(&mut self) {
-        self.particles.iter_mut().for_each(|z| z.tick());
+        self.particles.iter_mut().for_each(super::super::traits::Tickable::tick);
         self.particles.retain(|z| !z.removed);
     }
 
@@ -54,11 +53,11 @@ impl ParticleEngine {
             );
         }
 
-        let xa = -(f32::cos(player.y_rot * PI / 180.0));
-        let za = -(f32::sin(player.y_rot * PI / 180.0));
-        let xa2 = -za * f32::sin(player.x_rot * PI / 180.0);
-        let za2 = xa * f32::sin(player.x_rot * PI / 180.0);
-        let ya = f32::cos(player.x_rot * PI / 180.0);
+        let xa = -(f32::cos(player.y_rot.to_radians()));
+        let za = -(f32::sin(player.y_rot.to_radians()));
+        let xa2 = -za * f32::sin(player.x_rot.to_radians());
+        let za2 = xa * f32::sin(player.x_rot.to_radians());
+        let ya = f32::cos(player.x_rot.to_radians());
         let mut t = self.t.borrow_mut();
         unsafe { gl::Color4f(0.8, 0.8, 0.8, 1.0) }
 

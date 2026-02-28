@@ -7,7 +7,7 @@ pub struct GrassTile {
 }
 
 impl GrassTile {
-    pub const TILE: GrassTile = GrassTile {
+    pub const TILE: Self = Self {
         base: Tile { tex: 3, id: 2 },
     };
 }
@@ -44,9 +44,7 @@ impl TileTrait for GrassTile {
         y: crate::java::JInt,
         z: crate::java::JInt,
     ) {
-        if !level.is_lit(x, y, z) {
-            level.set_tile(x, y, z, Tile::DIRT.id);
-        } else {
+        if level.is_lit(x, y, z) {
             for _ in 0..4 {
                 let (xt, yt, zt) = {
                     let mut random = level.random.borrow_mut();
@@ -60,6 +58,8 @@ impl TileTrait for GrassTile {
                     level.set_tile(xt, yt, zt, Tile::GRASS.id);
                 }
             }
+        } else {
+            level.set_tile(x, y, z, Tile::DIRT.id);
         }
     }
 }

@@ -5,8 +5,8 @@ use crate::{
     java::{JBoolean, JFloat, JInt},
 };
 
-pub static MAX_MEMORY_USE: JInt = 4194304;
-pub static MAX_FLOATS: usize = 524288;
+pub static MAX_MEMORY_USE: JInt = 4_194_304;
+pub static MAX_FLOATS: usize = 524_288;
 
 pub struct Tesselator {
     buffer: Vec<JFloat>,
@@ -24,6 +24,7 @@ pub struct Tesselator {
 }
 
 impl Tesselator {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             buffer: vec![0.0; MAX_FLOATS],
@@ -77,20 +78,20 @@ impl Tesselator {
         self.clear();
     }
 
-    pub fn clear(&mut self) {
+    pub const fn clear(&mut self) {
         self.vertices = 0;
         // Should we clear? Probably not.
         self.p = 0;
     }
 
-    pub fn init(&mut self) {
+    pub const fn init(&mut self) {
         self.clear();
         self.has_color = false;
         self.has_texture = false;
         self.no_color = false;
     }
 
-    pub fn tex(&mut self, u: JFloat, v: JFloat) {
+    pub const fn tex(&mut self, u: JFloat, v: JFloat) {
         if !self.has_texture {
             self.len += 2;
         }
@@ -100,7 +101,7 @@ impl Tesselator {
         self.v = v;
     }
 
-    pub fn color(&mut self, r: JFloat, g: JFloat, b: JFloat) {
+    pub const fn color(&mut self, r: JFloat, g: JFloat, b: JFloat) {
         if !self.no_color {
             if !self.has_color {
                 self.len += 3;
@@ -125,7 +126,7 @@ impl Tesselator {
         self.vertex(x, y, z);
     }
 
-    pub fn no_color(&mut self) {
+    pub const fn no_color(&mut self) {
         self.no_color = true;
     }
 

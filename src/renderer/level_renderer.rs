@@ -77,7 +77,7 @@ impl LevelRenderer {
             y_chunks,
             z_chunks,
             textures,
-            t: t.clone(),
+            t,
         }));
 
         let adapter = LevelRendererListener {

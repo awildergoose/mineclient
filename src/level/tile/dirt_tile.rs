@@ -7,7 +7,7 @@ pub struct DirtTile {
 }
 
 impl DirtTile {
-    pub const TILE: DirtTile = DirtTile {
+    pub const TILE: Self = Self {
         base: Tile { tex: 2, id: 3 },
     };
 }

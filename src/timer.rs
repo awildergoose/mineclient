@@ -1,7 +1,7 @@
 use crate::java::{JFloat, JInt, JLong, get_nano_time};
 
-pub static NS_PER_SECOND: JLong = 1000000000;
-pub static MAX_NS_PER_UPDATE: JLong = 1000000000;
+pub static NS_PER_SECOND: JLong = 1_000_000_000;
+pub static MAX_NS_PER_UPDATE: JLong = 1_000_000_000;
 pub static MAX_TICKS_PER_UPDATE: JInt = 100;
 
 pub struct Timer {
@@ -15,6 +15,7 @@ pub struct Timer {
 }
 
 impl Timer {
+    #[must_use]
     pub fn new(ticks_per_second: JFloat) -> Self {
         Self {
             ticks_per_second,
@@ -44,7 +45,7 @@ impl Timer {
         self.fps = (1.0 / passed_seconds) as JFloat;
 
         let delta_ticks =
-            passed_seconds * (self.time_scale as f64) * (self.ticks_per_second as f64);
+            passed_seconds * f64::from(self.time_scale) * f64::from(self.ticks_per_second);
         self.passed_time += delta_ticks as JFloat;
 
         let mut ticks = self.passed_time.floor() as JInt;

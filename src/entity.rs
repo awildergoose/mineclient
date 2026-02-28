@@ -1,4 +1,4 @@
-use std::{cell::RefCell, f32::consts::PI, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     java::{JBoolean, JFloat, JInt, math_random},
@@ -82,11 +82,11 @@ impl Entity {
         self.set_pos(x, y, z);
     }
 
-    pub fn remove(&mut self) {
+    pub const fn remove(&mut self) {
         self.removed = true;
     }
 
-    pub fn set_size(&mut self, w: JFloat, h: JFloat) {
+    pub const fn set_size(&mut self, w: JFloat, h: JFloat) {
         self.bb_width = w;
         self.bb_height = h;
     }
@@ -142,24 +142,25 @@ impl Entity {
             self.zd = 0.0;
         }
 
-        self.x = (self.bb.x0 + self.bb.x1) / 2.0;
+        self.x = f32::midpoint(self.bb.x0, self.bb.x1);
         self.y = self.bb.y0 + self.height_offset;
-        self.z = (self.bb.z0 + self.bb.z1) / 2.0;
+        self.z = f32::midpoint(self.bb.z0, self.bb.z1);
     }
 
     pub fn move_relative(&mut self, mut xa: JFloat, mut za: JFloat, speed: JFloat) {
-        let mut dist = xa * xa + za * za;
+        let mut dist = xa.mul_add(xa, za * za);
         if !(dist < 0.01) {
             dist = speed / dist.sqrt();
             xa *= dist;
             za *= dist;
-            let sin = f32::sin(self.y_rot * PI / 180.0);
-            let cos = f32::cos(self.y_rot * PI / 180.0);
-            self.xd += xa * cos - za * sin;
-            self.zd += za * cos + xa * sin;
+            let sin = f32::sin(self.y_rot.to_radians());
+            let cos = f32::cos(self.y_rot.to_radians());
+            self.xd += xa.mul_add(cos, -(za * sin));
+            self.zd += za.mul_add(cos, xa * sin);
         }
     }
 
+    #[must_use]
     pub fn is_lit(&self) -> JBoolean {
         let x_tile = self.x as JInt;
         let y_tile = self.y as JInt;

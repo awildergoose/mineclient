@@ -8,18 +8,20 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub fn new(x: JFloat, y: JFloat, z: JFloat) -> Self {
+    #[must_use]
+    pub const fn new(x: JFloat, y: JFloat, z: JFloat) -> Self {
         Self { x, y, z }
     }
 
-    pub fn interpolate_to(&self, t: Vec3, p: JFloat) -> Self {
+    #[must_use]
+    pub const fn interpolate_to(&self, t: Self, p: JFloat) -> Self {
         let xt = self.x + (t.x - self.x) * p;
         let yt = self.y + (t.y - self.y) * p;
         let zt = self.z + (t.z - self.z) * p;
-        Vec3::new(xt, yt, zt)
+        Self::new(xt, yt, zt)
     }
 
-    pub fn set(&mut self, x: JFloat, y: JFloat, z: JFloat) {
+    pub const fn set(&mut self, x: JFloat, y: JFloat, z: JFloat) {
         self.x = x;
         self.y = y;
         self.z = z;

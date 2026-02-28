@@ -92,6 +92,7 @@ pub trait TileTrait: Send + Sync {
         Some(AABB::new(x, y, z, x + 1.0, y + 1.0, z + 1.0))
     }
 
+    // TODO: possibly make this optimized in Debug?
     fn render(&self, t: &mut Tesselator, level: &Level, layer: JInt, x: JInt, y: JInt, z: JInt) {
         let c1 = 1.0;
         let c2 = 0.8;
@@ -142,9 +143,9 @@ pub trait TileTrait: Send + Sync {
     fn render_face(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let tex = self.get_texture(face);
         let u0 = (tex % 16) as f32 / 16.0;
-        let u1 = u0 + 0.0624375;
+        let u1 = u0 + 0.062_437_5;
         let v0 = (tex / 16) as f32 / 16.0;
-        let v1 = v0 + 0.0624375;
+        let v1 = v0 + 0.062_437_5;
         let x0 = x as f32;
         let x1 = x as f32 + 1.0;
         let y0 = y as f32;
@@ -248,18 +249,20 @@ pub trait TileTrait: Send + Sync {
 }
 
 impl Tile {
-    pub const ROCK: Tile = Tile { id: 1, tex: 1 };
+    pub const ROCK: Self = Self { id: 1, tex: 1 };
     pub const GRASS: GrassTile = GrassTile::TILE;
     pub const DIRT: DirtTile = DirtTile::TILE;
-    pub const STONE_BRICK: Tile = Tile { id: 4, tex: 16 };
-    pub const WOOD: Tile = Tile { id: 5, tex: 4 };
+    pub const STONE_BRICK: Self = Self { id: 4, tex: 16 };
+    pub const WOOD: Self = Self { id: 5, tex: 4 };
     pub const BUSH: BushTile = BushTile::TILE;
 
-    pub fn new(id: JInt) -> Self {
+    #[must_use]
+    pub const fn new(id: JInt) -> Self {
         Self { tex: 0, id }
     }
 
-    pub fn new_with_id(id: JInt, tex: JInt) -> Self {
+    #[must_use]
+    pub const fn new_with_id(id: JInt, tex: JInt) -> Self {
         Self { tex, id }
     }
 }

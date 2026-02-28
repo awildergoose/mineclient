@@ -7,7 +7,8 @@ pub struct NoiseMap {
 }
 
 impl NoiseMap {
-    pub fn new(levels: JInt) -> Self {
+    #[must_use] 
+    pub const fn new(levels: JInt) -> Self {
         Self { levels, fuzz: 16 }
     }
 

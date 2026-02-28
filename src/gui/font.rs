@@ -17,7 +17,7 @@ pub struct Font {
 impl Font {
     pub fn new(name: &str, textures: Rc<RefCell<Textures>>) -> Self {
         let img = resolve_texture(name)
-            .unwrap_or_else(|_| panic!("Failed to load font image: {}", name))
+            .unwrap_or_else(|_| panic!("Failed to load font image: {name}"))
             .into_rgba8();
 
         let (w, _h) = img.dimensions();
@@ -48,9 +48,8 @@ impl Font {
 
                 if empty_column {
                     break 'col;
-                } else {
-                    x += 1;
                 }
+                x += 1;
             }
 
             if i == 32 {
@@ -69,7 +68,7 @@ impl Font {
     }
 
     pub fn draw_shadow(&self, t: &mut Tesselator, s: String, x: JInt, y: JInt, color: JInt) {
-        self.draw(t, &s.clone(), x + 1, y + 1, color, true);
+        self.draw(t, &s, x + 1, y + 1, color, true);
         self.draw_no_shadow(t, s.clone(), x, y, color);
     }
 
@@ -88,7 +87,7 @@ impl Font {
     ) {
         let chars: Vec<char> = s.chars().collect();
         if darken {
-            color = (color & 16579836) >> 2;
+            color = (color & 16_579_836) >> 2;
         }
 
         unsafe {
@@ -116,7 +115,7 @@ impl Font {
                     color = (r << 16) | (g << 8) | b;
                     i += 2;
                     if darken {
-                        color = (color & 16579836) >> 2;
+                        color = (color & 16_579_836) >> 2;
                     }
                     t.colori(color);
                     continue;
@@ -162,6 +161,7 @@ impl Font {
         }
     }
 
+    #[must_use]
     pub fn width(&self, s: &str) -> JInt {
         let chars: Vec<char> = s.chars().collect();
         let mut len = 0;

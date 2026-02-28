@@ -23,7 +23,8 @@ pub struct Cube {
 }
 
 impl Cube {
-    pub fn new(x_tex_offs: JInt, y_tex_offs: JInt) -> Self {
+    #[must_use]
+    pub const fn new(x_tex_offs: JInt, y_tex_offs: JInt) -> Self {
         Self {
             x_tex_offs,
             y_tex_offs,
@@ -40,7 +41,7 @@ impl Cube {
         }
     }
 
-    pub fn set_tex_offs(&mut self, x_tex_offs: JInt, y_tex_offs: JInt) {
+    pub const fn set_tex_offs(&mut self, x_tex_offs: JInt, y_tex_offs: JInt) {
         self.x_tex_offs = x_tex_offs;
         self.y_tex_offs = y_tex_offs;
     }
@@ -100,14 +101,14 @@ impl Cube {
             self.y_tex_offs + d,
         ));
         self.polygons.push(Polygon::new_with_uv(
-            vec![u1.clone(), u0.clone(), u3.clone(), u2.clone()],
+            vec![u1, u0, u3, u2],
             self.x_tex_offs + d,
             self.y_tex_offs + d,
             self.x_tex_offs + d + w,
             self.y_tex_offs + d + h,
         ));
         self.polygons.push(Polygon::new_with_uv(
-            vec![l0.clone(), l1.clone(), l2.clone(), l3.clone()],
+            vec![l0, l1, l2, l3],
             self.x_tex_offs + d + w + d,
             self.y_tex_offs + d,
             self.x_tex_offs + d + w + d + w,
@@ -115,7 +116,7 @@ impl Cube {
         ));
     }
 
-    pub fn set_pos(&mut self, x: JFloat, y: JFloat, z: JFloat) {
+    pub const fn set_pos(&mut self, x: JFloat, y: JFloat, z: JFloat) {
         self.x = x;
         self.y = y;
         self.z = z;

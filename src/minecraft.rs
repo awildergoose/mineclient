@@ -41,8 +41,8 @@ pub fn check_gl_error(s: &str) {
         // is this a ptr? should we convert this into a CString?
         let error_string = unsafe { gluErrorString(e) };
         println!("########## GL ERROR ##########");
-        println!("@ {:?}", s);
-        println!("{}: {:?}", e, error_string);
+        println!("@ {s:?}");
+        println!("{e}: {error_string:?}");
         process::exit(0);
     }
 }
@@ -74,7 +74,8 @@ pub struct Minecraft {
 pub const VERSION_STRING: &str = "0.0.11a";
 
 impl Minecraft {
-    pub fn new() -> Minecraft {
+    #[must_use]
+    pub fn new() -> Self {
         Self {
             width: 0,
             height: 0,
@@ -89,7 +90,7 @@ impl Minecraft {
             running: false,
             pause: false,
             edit_mode: 0,
-            fps_string: "".to_owned(),
+            fps_string: String::new(),
             y_mouse_axis: 1.0,
             font: None,
             level: None,
@@ -101,8 +102,8 @@ impl Minecraft {
     }
 
     pub fn init(&mut self) {
-        let col0 = 16710650;
-        let col1 = 920330;
+        let col0 = 16_710_650;
+        let col1 = 920_330;
         let fr = 0.5;
         let fg = 0.8;
         let fb = 1.0;
@@ -181,11 +182,11 @@ impl Minecraft {
 
     pub fn destroy(&mut self) {
         if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
-            eprintln!("failed to save level: {:?}", err);
+            eprintln!("failed to save level: {err:?}");
         }
     }
 
-    pub fn stop(&mut self) {
+    pub const fn stop(&mut self) {
         self.running = false;
     }
 
@@ -231,7 +232,7 @@ impl Minecraft {
     pub fn tick(&mut self) {
         if is_key_down(glfw::Key::Enter) {
             if let Err(err) = self.level.as_ref().unwrap().borrow().save() {
-                eprintln!("failed to save level: {:?}", err);
+                eprintln!("failed to save level: {err:?}");
             }
         } else if is_key_down(glfw::Key::Num1) {
             self.paint_texture = 1;
@@ -266,7 +267,7 @@ impl Minecraft {
         self.player.as_mut().unwrap().tick();
     }
 
-    fn move_camera_to_player(&mut self, a: JFloat) {
+    fn move_camera_to_player(&self, a: JFloat) {
         let player = self.player.as_ref().unwrap();
 
         unsafe {
@@ -275,9 +276,9 @@ impl Minecraft {
             gl::Rotatef(player.y_rot, 0.0, 1.0, 0.0);
         }
 
-        let x = player.xo + (player.x - player.xo) * a;
-        let y = player.yo + (player.y - player.yo) * a;
-        let z = player.zo + (player.z - player.zo) * a;
+        let x = (player.x - player.xo).mul_add(a, player.xo);
+        let y = (player.y - player.yo).mul_add(a, player.yo);
+        let z = (player.z - player.zo).mul_add(a, player.zo);
 
         unsafe {
             gl::Translatef(-x, -y, -z);
@@ -288,7 +289,12 @@ impl Minecraft {
         unsafe {
             gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
-            gluPerspective(70.0, self.width as f64 / self.height as f64, 0.05, 1000.0);
+            gluPerspective(
+                70.0,
+                f64::from(self.width) / f64::from(self.height),
+                0.05,
+                1000.0,
+            );
             gl::MatrixMode(gl::MODELVIEW);
             gl::LoadIdentity();
         }
@@ -304,13 +310,18 @@ impl Minecraft {
         unsafe {
             gl::GetIntegerv(gl::VIEWPORT, self.viewport_buffer.as_mut_ptr());
             gluPickMatrix(
-                x as f64,
-                y as f64,
+                f64::from(x),
+                f64::from(y),
                 5.0,
                 5.0,
                 self.viewport_buffer.as_mut_ptr(),
             );
-            gluPerspective(70.0, self.width as f64 / self.height as f64, 0.05, 1000.0);
+            gluPerspective(
+                70.0,
+                f64::from(self.width) / f64::from(self.height),
+                0.05,
+                1000.0,
+            );
             gl::MatrixMode(gl::MODELVIEW);
             gl::LoadIdentity();
         };
@@ -322,7 +333,7 @@ impl Minecraft {
         unsafe {
             gl::SelectBuffer(
                 self.select_buffer.len() as i32,
-                self.select_buffer.as_mut_ptr() as *mut _,
+                self.select_buffer.as_mut_ptr().cast(),
             );
             gl::RenderMode(gl::SELECT);
         }
@@ -436,6 +447,7 @@ impl Minecraft {
         }
     }
 
+    #[must_use]
     pub fn is_free(&self, aabb: AABB) -> JBoolean {
         if self.player.as_ref().unwrap().bb.intersects(aabb.clone()) {
             false
@@ -590,8 +602,8 @@ impl Minecraft {
             gl::PopMatrix();
             check_gl_error("GUI: Draw selected");
             let font = self.font.as_mut().unwrap().borrow_mut();
-            font.draw_shadow(&mut t, VERSION_STRING.to_owned(), 2, 2, 16777215);
-            font.draw_shadow(&mut t, self.fps_string.clone(), 2, 12, 16777215);
+            font.draw_shadow(&mut t, VERSION_STRING.to_owned(), 2, 2, 16_777_215);
+            font.draw_shadow(&mut t, self.fps_string.clone(), 2, 12, 16_777_215);
             gl::Color4f(1.0, 1.0, 1.0, 1.0);
         }
 
@@ -625,12 +637,12 @@ impl Minecraft {
                 gl::Enable(2896);
                 gl::Enable(2903);
                 let br = 0.6;
-                gl::LightModelfv(2899, self.get_buffer(br, br, br, 1.0).as_mut_ptr());
+                gl::LightModelfv(2899, Self::get_buffer(br, br, br, 1.0).as_mut_ptr());
             }
         }
     }
 
-    fn get_buffer(&self, a: JFloat, b: JFloat, c: JFloat, d: JFloat) -> Vec<JFloat> {
+    fn get_buffer(a: JFloat, b: JFloat, c: JFloat, d: JFloat) -> Vec<JFloat> {
         vec![a, b, c, d]
     }
 }

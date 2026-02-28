@@ -12,7 +12,15 @@ pub struct AABB {
 }
 
 impl AABB {
-    pub fn new(x0: JFloat, y0: JFloat, z0: JFloat, x1: JFloat, y1: JFloat, z1: JFloat) -> Self {
+    #[must_use]
+    pub const fn new(
+        x0: JFloat,
+        y0: JFloat,
+        z0: JFloat,
+        x1: JFloat,
+        y1: JFloat,
+        z1: JFloat,
+    ) -> Self {
         Self {
             epsilon: 0.0,
             x0,
@@ -24,53 +32,56 @@ impl AABB {
         }
     }
 
+    #[must_use]
     pub fn expand(&self, xa: JFloat, ya: JFloat, za: JFloat) -> Self {
-        let mut _x0 = self.x0;
-        let mut _y0 = self.y0;
-        let mut _z0 = self.z0;
-        let mut _x1 = self.x1;
-        let mut _y1 = self.y1;
-        let mut _z1 = self.z1;
+        let mut x0 = self.x0;
+        let mut y0 = self.y0;
+        let mut z0 = self.z0;
+        let mut x1 = self.x1;
+        let mut y1 = self.y1;
+        let mut z1 = self.z1;
         if xa < 0.0 {
-            _x0 += xa;
+            x0 += xa;
         }
 
         if xa > 0.0 {
-            _x1 += xa;
+            x1 += xa;
         }
 
         if ya < 0.0 {
-            _y0 += ya;
+            y0 += ya;
         }
 
         if ya > 0.0 {
-            _y1 += ya;
+            y1 += ya;
         }
 
         if za < 0.0 {
-            _z0 += za;
+            z0 += za;
         }
 
         if za > 0.0 {
-            _z1 += za;
+            z1 += za;
         }
 
-        Self::new(_x0, _y0, _z0, _x1, _y1, _z1)
+        Self::new(x0, y0, z0, x1, y1, z1)
     }
 
+    #[must_use]
     pub fn grow(&self, xa: JFloat, ya: JFloat, za: JFloat) -> Self {
-        let _x0 = self.x0 - xa;
-        let _y0 = self.y0 - ya;
-        let _z0 = self.z0 - za;
-        let _x1 = self.x1 + xa;
-        let _y1 = self.y1 + ya;
-        let _z1 = self.z1 + za;
-        Self::new(_x0, _y0, _z0, _x1, _y1, _z1)
+        let x0 = self.x0 - xa;
+        let y0 = self.y0 - ya;
+        let z0 = self.z0 - za;
+        let x1 = self.x1 + xa;
+        let y1 = self.y1 + ya;
+        let z1 = self.z1 + za;
+        Self::new(x0, y0, z0, x1, y1, z1)
     }
 
-    pub fn clip_x_collide(&self, c: &AABB, mut xa: JFloat) -> JFloat {
+    #[must_use]
+    pub fn clip_x_collide(&self, c: &Self, mut xa: JFloat) -> JFloat {
         if c.y1 <= self.y0 || c.y0 >= self.y1 {
-            xa
+            return xa;
         } else if c.z1 > self.z0 && c.z0 < self.z1 {
             if xa > 0.0 && c.x1 <= self.x0 {
                 let max = self.x0 - c.x1 - self.epsilon;
@@ -85,16 +96,15 @@ impl AABB {
                     xa = max;
                 }
             }
-
-            xa
-        } else {
-            xa
         }
+
+        xa
     }
 
-    pub fn clip_y_collide(&self, c: &AABB, mut ya: JFloat) -> JFloat {
+    #[must_use]
+    pub fn clip_y_collide(&self, c: &Self, mut ya: JFloat) -> JFloat {
         if c.x1 <= self.x0 || c.x0 >= self.x1 {
-            ya
+            return ya;
         } else if !(c.z1 <= self.z0) && !(c.z0 >= self.z1) {
             if ya > 0.0 && c.y1 <= self.y0 {
                 let max = self.y0 - c.y1 - self.epsilon;
@@ -109,16 +119,15 @@ impl AABB {
                     ya = max;
                 }
             }
-
-            ya
-        } else {
-            ya
         }
+
+        ya
     }
 
-    pub fn clip_z_collide(&self, c: &AABB, mut za: JFloat) -> JFloat {
+    #[must_use]
+    pub fn clip_z_collide(&self, c: &Self, mut za: JFloat) -> JFloat {
         if c.x1 <= self.x0 || c.x0 >= self.x1 {
-            za
+            return za;
         } else if !(c.y1 <= self.y0) && !(c.y0 >= self.y1) {
             if za > 0.0 && c.z1 <= self.z0 {
                 let max = self.z0 - c.z1 - self.epsilon;
@@ -133,14 +142,13 @@ impl AABB {
                     za = max;
                 }
             }
-
-            za
-        } else {
-            za
         }
+
+        za
     }
 
-    pub fn intersects(&self, c: AABB) -> JBoolean {
+    #[must_use]
+    pub fn intersects(&self, c: Self) -> JBoolean {
         if c.x1 <= self.x0 || c.x0 >= self.x1 {
             return false;
         }

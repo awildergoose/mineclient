@@ -41,31 +41,31 @@ impl Particle {
         base.set_size(0.2, 0.2);
         base.height_offset = base.bb_height / 2.0;
         base.set_pos(x, y, z);
-        let mut xd = xa + (math_random() * 2.0 - 1.0) * 0.4;
-        let mut yd = ya + (math_random() * 2.0 - 1.0) * 0.4;
-        let mut zd = za + (math_random() * 2.0 - 1.0) * 0.4;
+        let mut xd = math_random().mul_add(2.0, -1.0).mul_add(0.4, xa);
+        let mut yd = math_random().mul_add(2.0, -1.0).mul_add(0.4, ya);
+        let mut zd = math_random().mul_add(2.0, -1.0).mul_add(0.4, za);
         let speed = (math_random() + math_random() + 1.0) * 0.15;
         let dd = f32::sqrt(xd * xd + yd * yd + zd * zd);
         xd = xd / dd * speed * 0.4;
-        yd = yd / dd * speed * 0.4 + 0.1;
+        yd = (yd / dd * speed).mul_add(0.4, 0.1);
         zd = zd / dd * speed * 0.4;
         let uo = math_random() * 3.0;
         let vo = math_random() * 3.0;
-        let size = math_random() * 0.5 + 0.5;
-        let lifetime = (4.0 / (math_random() * 0.9 + 0.1)) as JInt;
+        let size = math_random().mul_add(0.5, 0.5);
+        let lifetime = (4.0 / math_random().mul_add(0.9, 0.1)) as JInt;
         let age = 0;
 
         Self {
             base,
-            tex,
-            age,
-            lifetime,
-            size,
-            uo,
-            vo,
             xd,
             yd,
             zd,
+            tex,
+            uo,
+            vo,
+            age,
+            lifetime,
+            size,
         }
     }
 
@@ -82,38 +82,38 @@ impl Particle {
     ) {
         // TODO check if these are right
         let u0 = ((self.tex % 16) as f32 + self.uo / 4.0) / 16.0;
-        let u1 = u0 + 0.015609375;
+        let u1 = u0 + 0.015_609_375;
         let v0 = ((self.tex / 16) as f32 + self.vo / 4.0) / 16.0;
-        let v1 = v0 + 0.015609375;
+        let v1 = v0 + 0.015_609_375;
         let r = 0.1 * self.size;
-        let x = self.xo + (self.x - self.xo) * a;
-        let y = self.yo + (self.y - self.yo) * a;
-        let z = self.zo + (self.z - self.zo) * a;
+        let x = (self.x - self.xo).mul_add(a, self.xo);
+        let y = (self.y - self.yo).mul_add(a, self.yo);
+        let z = (self.z - self.zo).mul_add(a, self.zo);
         t.vertex_uv(
-            x - xa * r - xa2 * r,
-            y - ya * r,
-            z - za * r - za2 * r,
+            xa2.mul_add(-r, xa.mul_add(-r, x)),
+            ya.mul_add(-r, y),
+            za2.mul_add(-r, za.mul_add(-r, z)),
             u0,
             v1,
         );
         t.vertex_uv(
-            x - xa * r + xa2 * r,
-            y + ya * r,
-            z - za * r + za2 * r,
+            xa2.mul_add(r, xa.mul_add(-r, x)),
+            ya.mul_add(r, y),
+            za2.mul_add(r, za.mul_add(-r, z)),
             u0,
             v0,
         );
         t.vertex_uv(
-            x + xa * r + xa2 * r,
-            y + ya * r,
-            z + za * r + za2 * r,
+            xa2.mul_add(r, xa.mul_add(r, x)),
+            ya.mul_add(r, y),
+            za2.mul_add(r, za.mul_add(r, z)),
             u1,
             v0,
         );
         t.vertex_uv(
-            x + xa * r - xa2 * r,
-            y - ya * r,
-            z + za * r - za2 * r,
+            xa2.mul_add(-r, xa.mul_add(r, x)),
+            ya.mul_add(-r, y),
+            za2.mul_add(-r, za.mul_add(r, z)),
             u1,
             v1,
         );

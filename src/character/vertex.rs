@@ -11,7 +11,8 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    pub fn new(x: JFloat, y: JFloat, z: JFloat, u: JFloat, v: JFloat) -> Self {
+    #[must_use]
+    pub const fn new(x: JFloat, y: JFloat, z: JFloat, u: JFloat, v: JFloat) -> Self {
         Self {
             pos: Vec3::new(x, y, z),
             u,
@@ -19,6 +20,7 @@ impl Vertex {
         }
     }
 
+    #[must_use]
     pub fn new_from_vertex(vertex: &Self, u: JFloat, v: JFloat) -> Self {
         Self {
             pos: vertex.pos.clone(),
@@ -27,17 +29,20 @@ impl Vertex {
         }
     }
 
-    pub fn new_from_pos(pos: Vec3, u: JFloat, v: JFloat) -> Self {
+    #[must_use]
+    pub const fn new_from_pos(pos: Vec3, u: JFloat, v: JFloat) -> Self {
         Self { pos, u, v }
     }
 
+    #[must_use]
     pub fn remap(&self, u: JFloat, v: JFloat) -> Self {
-        Vertex::new_from_vertex(self, u, v)
+        Self::new_from_vertex(self, u, v)
     }
 
     // helper
     #[inline]
+    #[must_use]
     pub fn remapi(&self, u: JInt, v: JInt) -> Self {
-        Vertex::new_from_vertex(self, u as JFloat, v as JFloat)
+        Self::new_from_vertex(self, u as JFloat, v as JFloat)
     }
 }

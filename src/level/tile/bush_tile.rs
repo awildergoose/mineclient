@@ -10,7 +10,7 @@ pub struct BushTile {
 }
 
 impl BushTile {
-    pub const TILE: BushTile = BushTile {
+    pub const TILE: Self = Self {
         base: Tile { tex: 15, id: 6 },
     };
 }
@@ -60,9 +60,9 @@ impl TileTrait for BushTile {
         if (!level.is_lit(x, y, z)) ^ (layer != 1) {
             let tex = self.get_texture(15);
             let u0 = (tex % 16) as f32 / 16.0;
-            let u1 = u0 + 0.0624375;
+            let u1 = u0 + 0.062_437_5;
             let v0 = (tex / 16) as f32 / 16.0;
-            let v1 = v0 + 0.0624375;
+            let v1 = v0 + 0.062_437_5;
             let rots = 2;
             t.color(1.0, 1.0, 1.0);
 

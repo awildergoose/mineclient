@@ -22,6 +22,7 @@ pub struct Level {
 }
 
 impl Level {
+    #[must_use] 
     pub fn new(w: JInt, h: JInt, d: JInt) -> Self {
         let w: usize = w as usize;
         let h: usize = h as usize;
@@ -39,7 +40,7 @@ impl Level {
         };
 
         if let Err(err) = this.load() {
-            eprintln!("failed to load level: {:?}", err);
+            eprintln!("failed to load level: {err:?}");
             this.blocks =
                 LevelGen::new(this.random.clone(), w as JInt, h as JInt, d as JInt).generate_map();
         }
@@ -55,7 +56,7 @@ impl Level {
 
         let i8_slice: &mut [i8] = self.blocks.as_mut_slice();
         let u8_slice: &mut [u8] = unsafe {
-            std::slice::from_raw_parts_mut(i8_slice.as_mut_ptr() as *mut u8, i8_slice.len())
+            std::slice::from_raw_parts_mut(i8_slice.as_mut_ptr().cast::<u8>(), i8_slice.len())
         };
 
         decoder.read_exact(u8_slice)?;
@@ -73,7 +74,7 @@ impl Level {
 
         let i8_slice: &[i8] = self.blocks.as_slice();
         let u8_slice: &[u8] =
-            unsafe { std::slice::from_raw_parts(i8_slice.as_ptr() as *const u8, i8_slice.len()) };
+            unsafe { std::slice::from_raw_parts(i8_slice.as_ptr().cast::<u8>(), i8_slice.len()) };
 
         encoder.write_all(u8_slice)?;
         encoder.finish()?;
@@ -113,18 +114,19 @@ impl Level {
         if let Some(pos) = self
             .level_listeners
             .iter()
-            .position(|p| std::ptr::eq(&**p, level_listener))
+            .position(|p| std::ptr::eq(&raw const **p, level_listener))
         {
             self.level_listeners.remove(pos);
         }
     }
 
+    #[must_use] 
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
         get_tile(self.get_tile(x, y, z))
-            .map(|t| t.blocks_light())
-            .unwrap_or(false)
+            .is_some_and(super::tile::tile::TileTrait::blocks_light)
     }
 
+    #[must_use] 
     pub fn get_cubes(&self, aabb: AABB) -> Vec<AABB> {
         let mut aabbs = Vec::new();
         let mut x0 = aabb.x0 as JInt;
@@ -178,7 +180,7 @@ impl Level {
         let height = self.height;
 
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            if type_ == self.blocks[((y * self.height + z) * self.width + x) as usize] as JInt {
+            if type_ == JInt::from(self.blocks[((y * self.height + z) * self.width + x) as usize]) {
                 false
             } else {
                 self.blocks[((y * height + z) * width + x) as usize] = type_ as JByte;
@@ -195,6 +197,7 @@ impl Level {
         }
     }
 
+    #[must_use] 
     pub fn is_lit(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
         if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
             true
@@ -203,18 +206,19 @@ impl Level {
         }
     }
 
+    #[must_use] 
     pub fn get_tile(&self, x: JInt, y: JInt, z: JInt) -> JInt {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            self.blocks[((y * self.height + z) * self.width + x) as usize] as JInt
+            JInt::from(self.blocks[((y * self.height + z) * self.width + x) as usize])
         } else {
             0
         }
     }
 
+    #[must_use] 
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
         get_tile(self.get_tile(x, y, z))
-            .map(|tile| tile.is_solid())
-            .unwrap_or(false)
+            .is_some_and(super::tile::tile::TileTrait::is_solid)
     }
 
     pub fn tick(&mut self) {

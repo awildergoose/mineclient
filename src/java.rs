@@ -1,11 +1,14 @@
 use glfw::{Action, Context, CursorMode, GlfwReceiver, Key, MouseButton, WindowEvent};
-use lazy_static::lazy_static;
 use rand::Rng;
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::Instant;
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    sync::{
+        LazyLock, Mutex,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+    },
+    time::Instant,
+};
 
 use crate::gl;
 
@@ -18,6 +21,7 @@ pub type JDouble = f64;
 pub type JChar = char;
 pub type JBoolean = bool;
 
+#[must_use]
 pub fn get_nano_time() -> JLong {
     let ns = START_INSTANT.elapsed().as_nanos();
     if ns <= i64::MAX as u128 {
@@ -27,6 +31,7 @@ pub fn get_nano_time() -> JLong {
     }
 }
 
+#[must_use]
 pub fn get_milli_time() -> JLong {
     let ms = START_INSTANT.elapsed().as_millis();
     if ms <= i64::MAX as u128 {
@@ -36,6 +41,7 @@ pub fn get_milli_time() -> JLong {
     }
 }
 
+#[must_use]
 pub fn math_random() -> JFloat {
     let mut rng = rand::rng();
     rng.random::<f32>()
@@ -51,51 +57,60 @@ pub struct WindowContext {
     events: GlfwReceiver<(f64, WindowEvent)>,
 }
 
-lazy_static! {
-    static ref START_INSTANT: Instant = Instant::now();
-    static ref PRESSED_KEYS: Mutex<HashSet<Key>> = Mutex::new(HashSet::new());
-    static ref PRESSED_MOUSE: Mutex<HashSet<u8>> = Mutex::new(HashSet::new());
-    static ref MOUSE_POS: Mutex<(f64, f64, f64, f64)> = Mutex::new((0.0, 0.0, 0.0, 0.0));
-    static ref MOUSE_GRABBED: AtomicBool = AtomicBool::new(false);
-    static ref DISPLAY_CLOSE_FLAG: AtomicBool = AtomicBool::new(false);
-    static ref FRAME_COUNTER: AtomicU64 = AtomicU64::new(0);
-    static ref LAST_PRESSED_KEYS: Mutex<HashMap<Key, u64>> = Mutex::new(HashMap::new());
-    static ref LAST_PRESSED_MOUSE: Mutex<HashMap<u8, u64>> = Mutex::new(HashMap::new());
-}
+static START_INSTANT: LazyLock<Instant> = LazyLock::new(Instant::now);
+static PRESSED_KEYS: LazyLock<Mutex<HashSet<Key>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+static PRESSED_MOUSE: LazyLock<Mutex<HashSet<u8>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+static MOUSE_POS: LazyLock<Mutex<(f64, f64, f64, f64)>> =
+    LazyLock::new(|| Mutex::new((0.0, 0.0, 0.0, 0.0)));
+static MOUSE_GRABBED: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(false));
+static DISPLAY_CLOSE_FLAG: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(false));
+static FRAME_COUNTER: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
+static LAST_PRESSED_KEYS: LazyLock<Mutex<HashMap<Key, u64>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+static LAST_PRESSED_MOUSE: LazyLock<Mutex<HashMap<u8, u64>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
+#[must_use]
 pub fn is_key_down(key: Key) -> bool {
     let set = PRESSED_KEYS.lock().unwrap();
     set.contains(&key)
 }
 
+#[must_use]
 pub fn is_mouse_button_down(button: u8) -> bool {
     let set = PRESSED_MOUSE.lock().unwrap();
     set.contains(&button)
 }
 
+#[must_use]
 pub fn is_key_just_pressed(key: Key) -> bool {
     let frame = FRAME_COUNTER.load(Ordering::SeqCst);
     let map = LAST_PRESSED_KEYS.lock().unwrap();
     map.get(&key).is_some_and(|&f| f == frame)
 }
 
+#[must_use]
 pub fn is_mouse_button_just_pressed(button: u8) -> bool {
     let frame = FRAME_COUNTER.load(Ordering::SeqCst);
     let map = LAST_PRESSED_MOUSE.lock().unwrap();
     map.get(&button).is_some_and(|&f| f == frame)
 }
 
+#[must_use]
 pub fn get_mouse_dx() -> JFloat {
     let mut pos = MOUSE_POS.lock().unwrap();
     let dx = pos.0 - pos.2;
     pos.2 = pos.0;
+    drop(pos);
     dx as JFloat
 }
 
+#[must_use]
 pub fn get_mouse_dy() -> JFloat {
     let mut pos = MOUSE_POS.lock().unwrap();
     let dy = pos.1 - pos.3;
     pos.3 = pos.1;
+    drop(pos);
     -dy as JFloat
 }
 
@@ -153,8 +168,8 @@ pub fn init_display(width: JInt, height: JInt) {
 
         let (mut window, events) = glfw
             .create_window(
-                width as u32,
-                height as u32,
+                width.cast_unsigned(),
+                height.cast_unsigned(),
                 "MineClient",
                 glfw::WindowMode::Windowed,
             )
@@ -186,10 +201,7 @@ pub fn update_display() {
 
     WINDOW_CTX.with(|ctx_cell| {
         let mut ctx_opt = ctx_cell.borrow_mut();
-        let ctx = match ctx_opt.as_mut() {
-            Some(c) => c,
-            None => return,
-        };
+        let Some(ctx) = ctx_opt.as_mut() else { return };
 
         ctx.window.swap_buffers();
         ctx.glfw.poll_events();
@@ -227,6 +239,7 @@ pub fn update_display() {
     });
 }
 
+#[must_use]
 pub fn is_display_close_requested() -> JBoolean {
     let mut requested = true;
     WINDOW_CTX.with(|ctx_cell| {

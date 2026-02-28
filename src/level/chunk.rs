@@ -129,14 +129,16 @@ impl Chunk {
         self.dirty = true;
     }
 
-    pub fn is_dirty(&self) -> JBoolean {
+    #[must_use]
+    pub const fn is_dirty(&self) -> JBoolean {
         self.dirty
     }
 
+    #[must_use]
     pub fn distance_to_sqr(&self, player: &Player) -> JFloat {
         let xd = player.x - self.x;
         let yd = player.y - self.y;
         let zd = player.z - self.z;
-        xd * xd + yd * yd + zd * zd
+        zd.mul_add(zd, xd.mul_add(xd, yd * yd))
     }
 }

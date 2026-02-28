@@ -1,4 +1,15 @@
 #![allow(clippy::neg_cmp_op_on_partial_ord)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::many_single_char_names)]
+#![allow(clippy::needless_pass_by_value)] // should we allow this?
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::float_cmp)]
+#![allow(clippy::similar_names)]
+#![allow(clippy::struct_field_names)]
 
 use crate::minecraft::Minecraft;
 

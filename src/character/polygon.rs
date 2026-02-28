@@ -6,10 +6,12 @@ pub struct Polygon {
 }
 
 impl Polygon {
-    pub fn new(vertices: Vec<Vertex>) -> Self {
+    #[must_use]
+    pub const fn new(vertices: Vec<Vertex>) -> Self {
         Self { vertices }
     }
 
+    #[must_use]
     pub fn new_with_uv(mut vertices: Vec<Vertex>, u0: JInt, v0: JInt, u1: JInt, v1: JInt) -> Self {
         vertices[0] = vertices[0].remapi(u1, v0);
         vertices[1] = vertices[1].remapi(u0, v0);

@@ -13,6 +13,7 @@ pub struct ZombieModel {
 }
 
 impl ZombieModel {
+    #[must_use]
     pub fn new() -> Self {
         let mut head = Cube::new(0, 0);
         head.add_box(-4.0, -8.0, -4.0, 8, 8, 8);
@@ -46,12 +47,12 @@ impl TimePreciseDrawable for ZombieModel {
     fn render(&mut self, time: f64) {
         self.head.y_rot = ((time * 0.83).sin() * 1.0) as f32;
         self.head.x_rot = (time.sin() * 0.8) as f32;
-        self.arm0.x_rot = ((time * 0.6662 + std::f64::consts::PI).sin() * 2.0) as f32;
+        self.arm0.x_rot = (time.mul_add(0.6662, std::f64::consts::PI).sin() * 2.0) as f32;
         self.arm0.z_rot = ((time * 0.2312).sin() + 1.0) as f32;
         self.arm1.x_rot = ((time * 0.6662).sin() * 2.0) as f32;
         self.arm1.z_rot = ((time * 0.2812).sin() - 1.0) as f32;
         self.leg0.x_rot = ((time * 0.6662).sin() * 1.4) as f32;
-        self.leg1.x_rot = ((time * 0.6662 + std::f64::consts::PI).sin() * 1.4) as f32;
+        self.leg1.x_rot = (time.mul_add(0.6662, std::f64::consts::PI).sin() * 1.4) as f32;
 
         self.head.render();
         self.body.render();
