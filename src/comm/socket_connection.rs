@@ -34,6 +34,7 @@ impl SocketConnection {
 
     pub fn disconnect(&mut self) -> Result<(), Error> {
         self.connected = false;
+        self.write_buffer = vec![0; BUFFER_SIZE];
         self.socket.shutdown(std::net::Shutdown::Both)
     }
 
