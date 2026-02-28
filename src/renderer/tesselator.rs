@@ -112,15 +112,15 @@ impl Tesselator {
             }
 
             self.has_color = true;
-            self.r = r as f32 / 255.0;
-            self.g = g as f32 / 255.0;
-            self.b = b as f32 / 255.0;
+            self.r = (r as u8 as f32) / 255.0;
+            self.g = (g as u8 as f32) / 255.0;
+            self.b = (b as u8 as f32) / 255.0;
         }
     }
 
     pub const fn colori(&mut self, c: JInt) {
-        let r = c >> 16 & 0xFF;
-        let g = c >> 8 & 0xFF;
+        let r = (c >> 16) & 0xFF;
+        let g = (c >> 8) & 0xFF;
         let b = c & 0xFF;
         self.colori3(r, g, b);
     }
