@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::OnceLock};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     java::{JBoolean, JInt},
@@ -17,23 +17,19 @@ pub struct Tile {
     pub id: JInt,
 }
 
-static TILE_MAP: OnceLock<HashMap<i32, Box<dyn TileTrait>>> = OnceLock::new();
-
+#[must_use]
 pub fn get_tile(id: i32) -> Option<&'static dyn TileTrait> {
-    TILE_MAP
-        .get_or_init(|| {
-            let mut h: HashMap<i32, Box<dyn TileTrait>> = HashMap::new();
-            h.insert(Tile::ROCK.id, Box::new(Tile::ROCK));
-            h.insert(Tile::GRASS.id, Box::new(Tile::GRASS));
-            h.insert(Tile::DIRT.id, Box::new(Tile::DIRT));
-            h.insert(Tile::STONE_BRICK.id, Box::new(Tile::STONE_BRICK));
-            h.insert(Tile::WOOD.id, Box::new(Tile::WOOD));
-            h.insert(Tile::BUSH.id, Box::new(Tile::BUSH));
-            h
-        })
-        .get(&id)
-        .map(|b| &**b)
+    match id {
+        x if x == Tile::ROCK.id => Some(&Tile::ROCK),
+        x if x == Tile::GRASS.id => Some(&Tile::GRASS),
+        x if x == Tile::DIRT.id => Some(&Tile::DIRT),
+        x if x == Tile::STONE_BRICK.id => Some(&Tile::STONE_BRICK),
+        x if x == Tile::WOOD.id => Some(&Tile::WOOD),
+        x if x == Tile::BUSH.id => Some(&Tile::BUSH),
+        _ => None,
+    }
 }
+
 pub trait TileTrait: Send + Sync {
     fn get_texture(&self, face: JInt) -> JInt;
 

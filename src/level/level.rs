@@ -206,10 +206,10 @@ impl Level {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_tile(&self, x: JInt, y: JInt, z: JInt) -> JInt {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            JInt::from(self.blocks[((y * self.height + z) * self.width + x) as usize])
+            unsafe { JInt::from(*self.blocks.get_unchecked(((y * self.height + z) * self.width + x) as usize)) }
         } else {
             0
         }
