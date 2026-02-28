@@ -1,25 +1,41 @@
 use std::{
+    cell::RefCell,
     io::{Error, Read, Write},
     net::TcpStream,
-    sync::Arc,
+    rc::Rc,
+    sync::{LazyLock, atomic::AtomicU64},
 };
 
 use crate::{comm::connection_listener::ConnectionListener, java::JBoolean};
 
 pub static BUFFER_SIZE: usize = 131_068;
 
+pub type SocketConnectionListener = Box<Rc<RefCell<dyn ConnectionListener>>>;
+
 pub struct SocketConnection {
-    socket: TcpStream,
+    pub socket: TcpStream,
     write_buffer: Vec<u8>,
-    connection_listener: Option<Arc<dyn ConnectionListener>>,
+    connection_listener: Option<SocketConnectionListener>,
     connected: JBoolean,
+
+    id: u64,
 }
+
+impl PartialEq for SocketConnection {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for SocketConnection {}
+
+static SOCKET_ID_COUNTER: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
 
 impl SocketConnection {
     pub fn new(
         ip: String,
         port: u16,
-        connection_listener: Arc<dyn ConnectionListener>,
+        connection_listener: SocketConnectionListener,
     ) -> Result<Self, Error> {
         let socket = TcpStream::connect((ip, port))?;
         socket.set_nonblocking(true)?;
@@ -29,17 +45,19 @@ impl SocketConnection {
             write_buffer: vec![0; BUFFER_SIZE],
             connection_listener: Some(connection_listener),
             connected: true,
+            id: SOCKET_ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         })
     }
 
     #[must_use]
-    pub fn from_socket(socket: TcpStream) -> Self {
-        Self {
+    pub fn from_socket(socket: TcpStream) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             socket,
             write_buffer: vec![0; BUFFER_SIZE],
             connection_listener: None,
             connected: true,
-        }
+            id: SOCKET_ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        }))
     }
 
     pub fn disconnect(&mut self) -> Result<(), Error> {
@@ -67,8 +85,8 @@ impl SocketConnection {
                 if n > 0 {
                     let opcode = temp[0];
 
-                    if let Some(listener) = &self.connection_listener {
-                        listener.command(opcode, n, temp[..n].to_vec());
+                    if let Some(listener) = &mut self.connection_listener {
+                        listener.borrow_mut().command(opcode, n, temp[..n].to_vec());
                     }
                 }
             }
@@ -92,5 +110,9 @@ impl SocketConnection {
     #[must_use]
     pub const fn is_connected(&self) -> JBoolean {
         self.connected
+    }
+
+    pub fn set_connection_listener(&mut self, connection_listener: SocketConnectionListener) {
+        self.connection_listener = Some(connection_listener);
     }
 }

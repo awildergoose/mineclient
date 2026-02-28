@@ -26,6 +26,7 @@ pub mod particle;
 pub mod phys;
 pub mod player;
 pub mod renderer;
+pub mod server;
 pub mod timer;
 pub mod traits;
 
