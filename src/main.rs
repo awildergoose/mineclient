@@ -14,6 +14,7 @@
 use crate::minecraft::Minecraft;
 
 pub mod character;
+pub mod comm;
 pub mod entity;
 pub mod gl;
 pub mod gui;
