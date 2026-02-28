@@ -4,4 +4,4 @@
 
 # incomplete
 
-(comm and server wont be added for now)
+server
