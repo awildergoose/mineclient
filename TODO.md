@@ -2,6 +2,7 @@
 
 -   gui/Font.java
 -   renderer/Tesselator.java
+-   renderer/Textures.java
 -   level/Chunk.java
 -   level/tile/Bush.java
 -   level/tile/Tile.java
@@ -34,7 +35,6 @@
 -   level/LevelLoaderListener.java
 -   particle/ParticleEngine.java
 -   phys/AABB.java
--   renderer/Textures.java
 -   Entity.java
 -   HitResult.java
 -   Minecraft.java
