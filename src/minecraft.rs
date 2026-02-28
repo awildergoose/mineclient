@@ -48,8 +48,8 @@ pub fn check_gl_error(s: &str) {
 }
 
 pub struct Minecraft {
-    width: JInt,
-    height: JInt,
+    pub width: JInt,
+    pub height: JInt,
     fog_color_0: [f32; 4],
     fog_color_1: [f32; 4],
     timer: Timer,
@@ -62,7 +62,7 @@ pub struct Minecraft {
     entities: Vec<Box<dyn EntityTrait>>,
     paint_texture: JInt,
     particle_engine: Option<ParticleEngine>,
-    font: Option<Rc<RefCell<Font>>>,
+    pub font: Option<Rc<RefCell<Font>>>,
     running: JBoolean,
     pause: JBoolean,
     y_mouse_axis: JFloat,

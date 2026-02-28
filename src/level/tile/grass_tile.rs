@@ -33,17 +33,8 @@ impl DerefMut for GrassTile {
 }
 
 impl TileTrait for GrassTile {
-    fn bounds(
-        &self,
-    ) -> (
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-    ) {
-        self.base.bounds()
+    fn base(&self) -> &Tile {
+        &self.base
     }
 
     fn get_texture(&self, face: crate::java::JInt) -> crate::java::JInt {

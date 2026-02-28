@@ -20,12 +20,12 @@
 # partial (working but unfinished)
 
 -   level/LevelRenderer.java
+-   gui/Screen.java
 -   Minecraft.java
 
 # incomplete
 
 -   gui/PauseScreen.java
--   gui/Screen.java
 -   level/levelgen/synth/Distort.java
 -   level/levelgen/synth/Emboss.java
 -   level/levelgen/synth/ImprovedNoise.java

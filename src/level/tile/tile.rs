@@ -41,9 +41,11 @@ pub fn get_tile(id: i32) -> Option<&'static dyn TileTrait> {
 }
 
 pub trait TileTrait: Send + Sync {
-    // (xx0, yy0, zz0, xx1, yy1, zz1)
-    fn bounds(&self) -> (JFloat, JFloat, JFloat, JFloat, JFloat, JFloat);
-    fn get_texture(&self, face: JInt) -> JInt;
+    fn base(&self) -> &Tile;
+
+    fn get_texture(&self, _face: JInt) -> JInt {
+        self.base().tex
+    }
 
     fn blocks_light(&self) -> JBoolean {
         true
@@ -168,19 +170,19 @@ pub trait TileTrait: Send + Sync {
 
     fn render_face(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let tex = self.get_texture(face);
-        let (xx0, yy0, zz0, xx1, yy1, zz1) = self.bounds();
+        let base = self.base();
         let xt = (tex % 16) as f32 * 16.0;
         let u0 = xt / 256.0;
         let yt = (tex / 16) as f32 * 16.0;
         let u1 = (xt + 15.99) / 256.0;
         let v0 = yt / 256.0;
         let v1 = (yt + 15.99) / 256.0;
-        let x0 = x as f32 + xx0;
-        let x1 = x as f32 + xx1;
-        let y0 = y as f32 + yy0;
-        let y1 = y as f32 + yy1;
-        let z0 = z as f32 + zz0;
-        let z1 = z as f32 + zz1;
+        let x0 = x as f32 + base.xx0;
+        let x1 = x as f32 + base.xx1;
+        let y0 = y as f32 + base.yy0;
+        let y1 = y as f32 + base.yy1;
+        let z0 = z as f32 + base.zz0;
+        let z1 = z as f32 + base.zz1;
 
         if face == 0 {
             t.vertex_uv(x0, y0, z1, u0, v1);
@@ -217,17 +219,17 @@ pub trait TileTrait: Send + Sync {
 
     fn render_backface(&self, t: &mut Tesselator, x: JInt, y: JInt, z: JInt, face: JInt) {
         let tex = self.get_texture(face);
-        let (xx0, yy0, zz0, xx1, yy1, zz1) = self.bounds();
+        let base = self.base();
         let u0 = (tex % 16) as f32 / 16.0;
         let u1 = u0 + 0.062_437_5;
         let v0 = (tex / 16) as f32 / 16.0;
         let v1 = v0 + 0.062_437_5;
-        let x0 = x as f32 + xx0;
-        let x1 = x as f32 + xx1;
-        let y0 = y as f32 + yy0;
-        let y1 = y as f32 + yy1;
-        let z0 = z as f32 + zz0;
-        let z1 = z as f32 + zz1;
+        let x0 = x as f32 + base.xx0;
+        let x1 = x as f32 + base.xx1;
+        let y0 = y as f32 + base.yy0;
+        let y1 = y as f32 + base.yy1;
+        let z0 = z as f32 + base.zz0;
+        let z1 = z as f32 + base.zz1;
 
         if face == 0 {
             t.vertex_uv(x1, y0, z1, u1, v1);
@@ -412,11 +414,7 @@ impl Tile {
 }
 
 impl TileTrait for Tile {
-    fn bounds(&self) -> (JFloat, JFloat, JFloat, JFloat, JFloat, JFloat) {
-        (self.xx0, self.yy0, self.zz0, self.xx1, self.yy1, self.zz1)
-    }
-
-    fn get_texture(&self, _face: JInt) -> JInt {
-        self.tex
+    fn base(&self) -> &Tile {
+        self
     }
 }

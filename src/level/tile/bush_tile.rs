@@ -34,21 +34,8 @@ impl DerefMut for BushTile {
 }
 
 impl TileTrait for BushTile {
-    fn bounds(
-        &self,
-    ) -> (
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-        crate::java::JFloat,
-    ) {
-        self.base.bounds()
-    }
-
-    fn get_texture(&self, _face: crate::java::JInt) -> crate::java::JInt {
-        self.base.tex
+    fn base(&self) -> &Tile {
+        &self.base
     }
 
     fn tick(
