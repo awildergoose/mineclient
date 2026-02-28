@@ -203,9 +203,9 @@ impl LevelRenderer {
                                 gl::LoadName(i);
                             }
 
-                            t.init();
+                            t.begin();
                             tile.render_face_no_texture(&mut t, x, y, z, i as i32);
-                            t.flush();
+                            t.end();
                         }
 
                         unsafe {
@@ -243,9 +243,9 @@ impl LevelRenderer {
         }
         let mut t = self.t.borrow_mut();
         if mode == 0 {
-            t.init();
+            t.begin();
             Tile::ROCK.render_face_no_texture(&mut t, h.x, h.y, h.z, h.f);
-            t.flush();
+            t.end();
         } else {
             unsafe {
                 gl::BlendFunc(gl::SRC_ALPHA, 771);
@@ -288,7 +288,7 @@ impl LevelRenderer {
                     x += 1;
                 }
 
-                t.init();
+                t.begin();
                 t.no_color();
                 get_tile(tile_type)
                     .unwrap()
@@ -296,7 +296,7 @@ impl LevelRenderer {
                 get_tile(tile_type)
                     .unwrap()
                     .render(&mut t, &self.level.borrow(), 1, x, y, z);
-                t.flush();
+                t.end();
                 gl::Disable(3553);
             }
         }

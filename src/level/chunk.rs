@@ -85,7 +85,7 @@ impl Chunk {
         let before = get_nano_time();
         unsafe { gl::NewList(self.lists + layer, gl::COMPILE) }
         let mut t = self.t.borrow_mut();
-        t.init();
+        t.begin();
 
         let mut tiles = 0;
         let level = self.level.borrow_mut();
@@ -104,7 +104,7 @@ impl Chunk {
             }
         }
 
-        t.flush();
+        t.end();
 
         unsafe {
             gl::EndList();

@@ -64,7 +64,7 @@ impl TileTrait for BushTile {
             let v0 = (tex / 16) as f32 / 16.0;
             let v1 = v0 + 0.062_437_5;
             let rots = 2;
-            t.color(1.0, 1.0, 1.0);
+            t.colori3(255, 255, 255);
 
             for r in 0..rots {
                 let xa = f32::sin(r as f32 * PI / rots as f32 + (PI / 4.0)) * 0.5;
@@ -79,10 +79,10 @@ impl TileTrait for BushTile {
                 t.vertex_uv(x1, y1, z1, u0, v0);
                 t.vertex_uv(x1, y0, z1, u0, v1);
                 t.vertex_uv(x0, y0, z0, u1, v1);
-                t.vertex_uv(x1, y1, z1, u0, v0);
-                t.vertex_uv(x0, y1, z0, u1, v0);
-                t.vertex_uv(x0, y0, z0, u1, v1);
-                t.vertex_uv(x1, y0, z1, u0, v1);
+                t.vertex_uv(x1, y1, z1, u1, v0);
+                t.vertex_uv(x0, y1, z0, u0, v0);
+                t.vertex_uv(x0, y0, z0, u0, v1);
+                t.vertex_uv(x1, y0, z1, u1, v1);
             }
         }
     }

@@ -588,7 +588,7 @@ impl Minecraft {
             let id = self.textures.borrow_mut().load_texture("terrain.png", 9728);
             gl::BindTexture(3553, id);
             gl::Enable(3553);
-            t.init();
+            t.begin();
             get_tile(self.paint_texture).unwrap().render(
                 &mut t,
                 &self.level.as_ref().unwrap().borrow(),
@@ -597,7 +597,7 @@ impl Minecraft {
                 0,
                 0,
             );
-            t.flush();
+            t.end();
             gl::Disable(3553);
             gl::PopMatrix();
             check_gl_error("GUI: Draw selected");
@@ -610,7 +610,7 @@ impl Minecraft {
         let wc = (screen_width / 2) as f32;
         let hc = (screen_height / 2) as f32;
 
-        t.init();
+        t.begin();
         t.vertex(wc + 1.0, hc - 4.0, 0.0);
         t.vertex(wc - 0.0, hc - 4.0, 0.0);
         t.vertex(wc - 0.0, hc + 5.0, 0.0);
@@ -619,7 +619,7 @@ impl Minecraft {
         t.vertex(wc - 4.0, hc - 0.0, 0.0);
         t.vertex(wc - 4.0, hc + 1.0, 0.0);
         t.vertex(wc + 5.0, hc + 1.0, 0.0);
-        t.flush();
+        t.end();
         check_gl_error("GUI: Draw crosshair");
     }
 

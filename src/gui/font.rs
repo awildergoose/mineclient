@@ -95,7 +95,7 @@ impl Font {
             gl::BindTexture(gl::TEXTURE_2D, self.font_texture);
         }
 
-        t.init();
+        t.begin();
         t.colori(color);
         let mut xo = 0i32;
         let mut i = 0usize;
@@ -155,7 +155,7 @@ impl Font {
             i += 1;
         }
 
-        t.flush();
+        t.end();
         unsafe {
             gl::Disable(gl::TEXTURE_2D);
         }

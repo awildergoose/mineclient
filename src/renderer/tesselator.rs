@@ -2,7 +2,7 @@ use std::ffi::c_void;
 
 use crate::{
     gl,
-    java::{JBoolean, JFloat, JInt},
+    java::{JBoolean, JByte, JFloat, JInt},
 };
 
 pub static MAX_MEMORY_USE: JInt = 4_194_304;
@@ -42,7 +42,7 @@ impl Tesselator {
         }
     }
 
-    pub fn flush(&mut self) {
+    pub fn end(&mut self) {
         if self.vertices > 0 {
             unsafe {
                 let buffer = self.buffer.as_mut_ptr() as *const c_void;
@@ -84,7 +84,7 @@ impl Tesselator {
         self.p = 0;
     }
 
-    pub const fn init(&mut self) {
+    pub const fn begin(&mut self) {
         self.clear();
         self.has_color = false;
         self.has_texture = false;
@@ -101,24 +101,28 @@ impl Tesselator {
         self.v = v;
     }
 
-    pub const fn color(&mut self, r: JFloat, g: JFloat, b: JFloat) {
+    pub const fn colori3(&mut self, r: JInt, g: JInt, b: JInt) {
+        self.color(r as JByte, g as JByte, b as JByte);
+    }
+
+    pub const fn color(&mut self, r: JByte, g: JByte, b: JByte) {
         if !self.no_color {
             if !self.has_color {
                 self.len += 3;
             }
 
             self.has_color = true;
-            self.r = r;
-            self.g = g;
-            self.b = b;
+            self.r = r as f32 / 255.0;
+            self.g = g as f32 / 255.0;
+            self.b = b as f32 / 255.0;
         }
     }
 
-    pub fn colori(&mut self, c: JInt) {
-        let r = (c >> 16 & 0xFF) as f32 / 255.0;
-        let g = (c >> 8 & 0xFF) as f32 / 255.0;
-        let b = (c & 0xFF) as f32 / 255.0;
-        self.color(r, g, b);
+    pub const fn colori(&mut self, c: JInt) {
+        let r = c >> 16 & 0xFF;
+        let g = c >> 8 & 0xFF;
+        let b = c & 0xFF;
+        self.colori3(r, g, b);
     }
 
     pub fn vertex_uv(&mut self, x: JFloat, y: JFloat, z: JFloat, u: JFloat, v: JFloat) {
@@ -165,7 +169,7 @@ impl Tesselator {
         if self.vertices % 4 == 0 {
             let threshold = MAX_FLOATS.saturating_sub(self.len * 4);
             if self.p >= threshold {
-                self.flush();
+                self.end();
             }
         }
     }

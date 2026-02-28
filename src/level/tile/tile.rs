@@ -90,9 +90,9 @@ pub trait TileTrait: Send + Sync {
 
     // TODO: possibly make this optimized in Debug?
     fn render(&self, t: &mut Tesselator, level: &Level, layer: JInt, x: JInt, y: JInt, z: JInt) {
-        let c1 = 1.0;
-        let c2 = 0.8;
-        let c3 = 0.6;
+        let c1 = -1;
+        let c2 = -52;
+        let c3 = -103;
 
         if self.should_render_face(level, x, y - 1, z, layer) {
             t.color(c1, c1, c1);

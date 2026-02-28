@@ -63,7 +63,7 @@ impl ParticleEngine {
         let mut t = self.t.borrow_mut();
         unsafe { gl::Color4f(0.8, 0.8, 0.8, 1.0) }
 
-        t.init();
+        t.begin();
 
         for p in &mut self.particles {
             // TODO unsure if this bitwise op is right
@@ -72,7 +72,7 @@ impl ParticleEngine {
             }
         }
 
-        t.flush();
+        t.end();
 
         unsafe { gl::Disable(3553) }
     }
