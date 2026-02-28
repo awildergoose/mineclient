@@ -29,6 +29,7 @@ pub mod renderer;
 pub mod server;
 pub mod timer;
 pub mod traits;
+pub mod user;
 
 fn main() {
     let mut mc = Minecraft::default();

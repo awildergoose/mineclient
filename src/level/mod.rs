@@ -1,4 +1,5 @@
 pub mod chunk;
+pub mod coord;
 pub mod frustum;
 #[allow(clippy::module_inception)]
 pub mod level;

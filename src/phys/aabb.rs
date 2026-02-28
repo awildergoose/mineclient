@@ -79,6 +79,18 @@ impl AABB {
     }
 
     #[must_use]
+    pub fn clone_move(&self, xa: JFloat, ya: JFloat, za: JFloat) -> Self {
+        Self::new(
+            self.x0 + xa,
+            self.y0 + ya,
+            self.z0 + za,
+            self.x1 + xa,
+            self.y1 + ya,
+            self.z1 + za,
+        )
+    }
+
+    #[must_use]
     pub fn clip_x_collide(&self, c: &Self, mut xa: JFloat) -> JFloat {
         if c.y1 <= self.y0 || c.y0 >= self.y1 {
             return xa;
