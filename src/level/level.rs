@@ -22,7 +22,7 @@ pub struct Level {
 }
 
 impl Level {
-    #[must_use] 
+    #[must_use]
     pub fn new(w: JInt, h: JInt, d: JInt) -> Self {
         let w: usize = w as usize;
         let h: usize = h as usize;
@@ -120,13 +120,12 @@ impl Level {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        get_tile(self.get_tile(x, y, z))
-            .is_some_and(super::tile::tile::TileTrait::blocks_light)
+        get_tile(self.get_tile(x, y, z)).is_some_and(super::tile::tile::TileTrait::blocks_light)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_cubes(&self, aabb: AABB) -> Vec<AABB> {
         let mut aabbs = Vec::new();
         let mut x0 = aabb.x0 as JInt;
@@ -197,7 +196,7 @@ impl Level {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn is_lit(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
         if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
             true
@@ -209,16 +208,21 @@ impl Level {
     #[must_use]
     pub fn get_tile(&self, x: JInt, y: JInt, z: JInt) -> JInt {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            unsafe { JInt::from(*self.blocks.get_unchecked(((y * self.height + z) * self.width + x) as usize)) }
+            unsafe {
+                JInt::from(
+                    *self
+                        .blocks
+                        .get_unchecked(((y * self.height + z) * self.width + x) as usize),
+                )
+            }
         } else {
             0
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        get_tile(self.get_tile(x, y, z))
-            .is_some_and(super::tile::tile::TileTrait::is_solid)
+        get_tile(self.get_tile(x, y, z)).is_some_and(super::tile::tile::TileTrait::is_solid)
     }
 
     pub fn tick(&mut self) {

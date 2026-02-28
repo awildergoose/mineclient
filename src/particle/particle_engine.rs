@@ -36,7 +36,9 @@ impl ParticleEngine {
     }
 
     pub fn tick(&mut self) {
-        self.particles.iter_mut().for_each(super::super::traits::Tickable::tick);
+        self.particles
+            .iter_mut()
+            .for_each(super::super::traits::Tickable::tick);
         self.particles.retain(|z| !z.removed);
     }
 
