@@ -62,7 +62,6 @@ impl Textures {
         unsafe {
             gl::GenTextures(1, &raw mut id);
             gl::BindTexture(gl::TEXTURE_2D, id);
-            println!("{resource_name} -> {id}");
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, mode);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, mode);
