@@ -20,6 +20,7 @@
 # partial (working but unfinished)
 
 -   level/LevelRenderer.java
+-   Minecraft.java
 
 # incomplete
 
@@ -39,5 +40,4 @@
 -   level/LevelIO.java
 -   level/LevelLoaderListener.java
 -   Entity.java
--   Minecraft.java
 -   Player.java
