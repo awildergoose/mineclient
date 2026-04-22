@@ -1,4 +1,12 @@
-use std::{cell::RefCell, process, rc::Rc, sync::atomic::Ordering, thread, time::Duration};
+use std::{
+    cell::RefCell,
+    fs::File,
+    process,
+    rc::Rc,
+    sync::{atomic::Ordering, Arc},
+    thread,
+    time::Duration,
+};
 
 use crate::{
     character::zombie::Zombie,
@@ -7,20 +15,24 @@ use crate::{
         self,
         types::{GLdouble, GLenum, GLint, GLubyte},
     },
-    gui::font::Font,
+    gui::{font::Font, screen::ScreenTrait},
     hit_result::HitResult,
     java::{
         get_milli_time, get_mouse_dx, get_mouse_dy, get_mouse_x, get_mouse_y, grab_mouse,
         init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
         update_display, JBoolean, JFloat, JInt, WINDOW_CTX,
     },
-    level::{chunk, frustum, level::Level, tile::tile::get_tile},
+    level::{
+        chunk, frustum, level::Level, level_gen::LevelGen, level_io::LevelIo,
+        level_loader_listener::LevelLoaderListener, tile::tile::get_tile,
+    },
     particle::particle_engine::ParticleEngine,
     phys::aabb::AABB,
     player::Player,
     renderer::{level_renderer::LevelRenderer, textures::Textures},
     timer::Timer,
     traits::Tickable,
+    user::User,
 };
 
 unsafe extern "C" {
@@ -62,20 +74,65 @@ pub struct Minecraft {
     entities: Vec<Box<dyn EntityTrait>>,
     paint_texture: JInt,
     particle_engine: Option<ParticleEngine>,
+    pub user: User,
     pub font: Option<Rc<RefCell<Font>>>,
     running: JBoolean,
     pause: JBoolean,
     y_mouse_axis: JFloat,
     edit_mode: JInt,
+    screen: Option<Arc<dyn ScreenTrait>>,
+    level_io: LevelIo,
+    level_gen: LevelGen,
     fps_string: String,
     pub textures: Rc<RefCell<Textures>>,
+
+    // rust-specific
+    receiver_begin: std::sync::mpsc::Receiver<String>,
+    receiver_update: std::sync::mpsc::Receiver<String>,
 }
 
 pub const VERSION_STRING: &str = "0.0.13a";
 
+// Rust-specific
+#[derive(Clone)]
+struct MinecraftInner {
+    begin: std::sync::mpsc::Sender<String>,
+    update: std::sync::mpsc::Sender<String>,
+}
+
+impl LevelLoaderListener for MinecraftInner {
+    fn begin_level_loading(&self, status: &str) {
+        self.begin.send(status.to_owned()).unwrap();
+    }
+
+    fn level_load_update(&self, status: &str) {
+        self.update.send(status.to_owned()).unwrap();
+    }
+}
+
 impl Minecraft {
+    // rust-specific
+    fn poll(&self) {
+        if let Ok(msg) = self.receiver_begin.try_recv() {
+            println!("level begin: {msg}");
+        }
+
+        while let Ok(msg) = self.receiver_update.try_recv() {
+            println!("level update: {msg}");
+        }
+    }
+
     #[must_use]
     pub fn new() -> Self {
+        let (sender_begin, receiver_begin) = std::sync::mpsc::channel();
+        let (sender_update, receiver_update) = std::sync::mpsc::channel();
+
+        let inner = MinecraftInner {
+            begin: sender_begin,
+            update: sender_update,
+        };
+        let inner2 = inner.clone();
+
         Self {
             width: 0,
             height: 0,
@@ -90,6 +147,9 @@ impl Minecraft {
             running: false,
             pause: false,
             edit_mode: 0,
+            screen: None,
+            level_io: LevelIo::new(Arc::new(inner)),
+            level_gen: LevelGen::new(Arc::new(inner2)),
             fps_string: String::new(),
             y_mouse_axis: 1.0,
             font: None,
@@ -97,7 +157,10 @@ impl Minecraft {
             level_renderer: None,
             player: None,
             particle_engine: None,
+            user: User::new("noname".to_owned()),
             hit_result: None,
+            receiver_begin,
+            receiver_update,
         }
     }
 
@@ -148,9 +211,25 @@ impl Minecraft {
         }
 
         check_gl_error("Startup");
+        self.font = Some(Rc::new(RefCell::new(Font::new(
+            "default.gif",
+            self.textures.clone(),
+        ))));
 
-        // TODO:
-        let level = Rc::new(RefCell::new(Level::set_data(256, 256, 64, vec![])));
+        let file = File::open("level.dat").unwrap();
+        let mut res = self.level_io.load(&file);
+
+        if res.is_err() {
+            res = self.level_io.load_legacy(&file);
+
+            if res.is_err() {
+                res = Ok(self
+                    .level_gen
+                    .generate_level(self.user.name.clone(), 256, 256, 64));
+            }
+        }
+
+        let level = Rc::new(RefCell::new(res.unwrap()));
 
         self.level = Some(level.clone());
         self.level_renderer = Some(LevelRenderer::new(level.clone(), self.textures.clone()));
@@ -160,10 +239,6 @@ impl Minecraft {
             self.textures.clone(),
             self.level_renderer.as_ref().unwrap().borrow().t.clone(),
         ));
-        self.font = Some(Rc::new(RefCell::new(Font::new(
-            "default.gif",
-            self.textures.clone(),
-        ))));
 
         grab_mouse();
 
@@ -172,6 +247,8 @@ impl Minecraft {
             zombie.reset_pos();
             self.entities.push(Box::new(zombie));
         }
+
+        // Applet code for setting emptyCursor is excluded
 
         check_gl_error("Post startup");
     }
@@ -200,6 +277,9 @@ impl Minecraft {
                 if is_display_close_requested() || is_key_down(glfw::Key::Escape) {
                     self.stop();
                 }
+
+                // rust-specific
+                self.poll();
 
                 self.timer.advance_time();
 

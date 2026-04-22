@@ -21,14 +21,14 @@ pub struct Level {
     pub width: JInt,
     pub height: JInt,
     pub depth: JInt,
-    blocks: Vec<JByte>,
+    pub blocks: Vec<JByte>,
     light_depths: Vec<JInt>,
     level_listeners: Vec<Box<dyn LevelListener>>,
     pub random: Rc<RefCell<JavaRandom>>,
     rand_value: JInt,
-    name: String,
-    creator: String,
-    create_time: JLong,
+    pub name: String,
+    pub creator: String,
+    pub create_time: JLong,
     unprocessed: JInt,
 }
 
@@ -285,11 +285,12 @@ impl Level {
             self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
             let z = (self.rand_value >> 16) & (h - 1);
             let id = self.blocks[((y * h + z) * w + x) as usize].into();
-            // if shouldTick[id] {
-            get_tile(id)
-                .unwrap()
-                .tick(self, x, y, z, self.random.clone());
-            // }
+
+            if let Some(tile) = get_tile(id) {
+                // if shouldTick[id] {
+                tile.tick(self, x, y, z, self.random.clone());
+                // }
+            }
         }
     }
 

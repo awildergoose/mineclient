@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.102"
+byteorder = "1.5.0"
 flate2 = "1.1.5"
 glfw = { version = "0.60.0", features = ["static-link"] }
 glutin = "0.32.3"
