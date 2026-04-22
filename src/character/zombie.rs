@@ -10,7 +10,7 @@ use crate::{
     character::zombie_model::ZombieModel,
     entity::{Entity, EntityTrait},
     gl,
-    java::{JFloat, get_nano_time, math_random},
+    java::{get_nano_time, math_random, JFloat},
     level::level::Level,
     renderer::textures::Textures,
     traits::TimePreciseDrawable,
@@ -143,27 +143,7 @@ impl EntityTrait for Zombie {
         }
     }
 
-    fn is_removed(&self) -> crate::java::JBoolean {
-        self.removed
-    }
-
-    fn get_x(&self) -> JFloat {
-        self.x
-    }
-
-    fn get_y(&self) -> JFloat {
-        self.y
-    }
-
-    fn get_z(&self) -> JFloat {
-        self.z
-    }
-
-    fn get_level(&self) -> Rc<RefCell<Level>> {
-        self.level.clone()
-    }
-
-    fn get_bb(&self) -> &crate::phys::aabb::AABB {
-        &self.bb
+    fn base(&self) -> &Entity {
+        &self.base
     }
 }

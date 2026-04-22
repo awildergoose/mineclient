@@ -1,14 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    java::{JBoolean, JFloat, JInt, math_random},
+    java::{math_random, JBoolean, JFloat, JInt},
     level::level::Level,
     phys::aabb::AABB,
 };
 
 pub struct Entity {
     pub level: Rc<RefCell<Level>>,
-    pub height_offset: JFloat,
     pub xo: JFloat,
     pub yo: JFloat,
     pub zo: JFloat,
@@ -23,27 +22,33 @@ pub struct Entity {
     pub bb: AABB,
     pub on_ground: JBoolean,
     pub removed: JBoolean,
+    pub height_offset: JFloat,
     pub bb_width: JFloat,
     pub bb_height: JFloat,
 }
 
 pub trait EntityTrait {
+    fn base(&self) -> &Entity;
+
     fn render(&mut self, _a: JFloat) {}
     fn tick(&mut self) {}
-    fn is_removed(&self) -> JBoolean;
-
-    // Maybe an EntityMeta and a `pub make_meta(entity: Entity) -> EntityMeta` instead?
-    fn get_x(&self) -> JFloat;
-    fn get_y(&self) -> JFloat;
-    fn get_z(&self) -> JFloat;
-    fn get_level(&self) -> Rc<RefCell<Level>>;
-    fn get_bb(&self) -> &AABB;
 
     fn is_lit(&self) -> JBoolean {
-        let x_tile = self.get_x() as JInt;
-        let y_tile = self.get_y() as JInt;
-        let z_tile = self.get_z() as JInt;
-        self.get_level().borrow_mut().is_lit(x_tile, y_tile, z_tile)
+        let x_tile = self.base().x as JInt;
+        let y_tile = self.base().y as JInt;
+        let z_tile = self.base().z as JInt;
+        self.base()
+            .level
+            .borrow_mut()
+            .is_lit(x_tile, y_tile, z_tile)
+    }
+
+    fn is_removed(&self) -> JBoolean {
+        self.base().removed
+    }
+
+    fn get_bb(&self) -> &AABB {
+        &self.base().bb
     }
 }
 
@@ -170,33 +175,13 @@ impl Entity {
 }
 
 impl EntityTrait for Entity {
-    fn is_removed(&self) -> JBoolean {
-        self.removed
-    }
-
-    fn get_x(&self) -> JFloat {
-        self.x
-    }
-
-    fn get_y(&self) -> JFloat {
-        self.y
-    }
-
-    fn get_z(&self) -> JFloat {
-        self.z
-    }
-
-    fn get_level(&self) -> Rc<RefCell<Level>> {
-        self.level.clone()
-    }
-
     fn tick(&mut self) {
         self.xo = self.x;
         self.yo = self.y;
         self.zo = self.z;
     }
 
-    fn get_bb(&self) -> &AABB {
-        &self.bb
+    fn base(&self) -> &Entity {
+        self
     }
 }
