@@ -21,6 +21,7 @@ pub struct Entity {
     pub x_rot: JFloat,
     pub bb: AABB,
     pub on_ground: JBoolean,
+    pub horizontal_collision: JBoolean,
     pub removed: JBoolean,
     pub height_offset: JFloat,
     pub bb_width: JFloat,
@@ -69,6 +70,7 @@ impl Entity {
             x_rot: 0.0,
             bb: AABB::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
             on_ground: false,
+            horizontal_collision: false,
             height_offset: 0.0,
             removed: false,
             bb_width: 0.6,
@@ -81,9 +83,9 @@ impl Entity {
     }
 
     pub fn reset_pos(&mut self) {
-        let x = math_random() * self.level.borrow().width as f32;
+        let x = math_random().mul_add(self.level.borrow().width as f32 - 2.0, 1.0);
         let y = self.level.borrow().depth as f32 + 10.0;
-        let z = math_random() * self.level.borrow().height as f32;
+        let z = math_random().mul_add(self.level.borrow().height as f32 - 2.0, 1.0);
         self.set_pos(x, y, z);
     }
 
@@ -111,6 +113,18 @@ impl Entity {
         self.x_rot = self.x_rot.clamp(-90.0, 90.0);
     }
 
+    #[must_use]
+    pub fn is_free(&self, xa: JFloat, ya: JFloat, za: JFloat) -> JBoolean {
+        let aabb = self.bb.clone_move(xa, ya, za);
+        let aabbs = self.level.borrow().get_cubes(aabb.clone());
+
+        if aabbs.is_empty() {
+            !self.level.borrow().contains_any_liquid(&aabb)
+        } else {
+            false
+        }
+    }
+
     pub fn move_(&mut self, mut xa: JFloat, mut ya: JFloat, mut za: JFloat) {
         let xa_org = xa;
         let ya_org = ya;
@@ -134,6 +148,7 @@ impl Entity {
         }
 
         self.bb.move_(0.0, 0.0, za);
+        self.horizontal_collision = xa_org != za || za_org != za;
         self.on_ground = ya_org != ya && ya_org < 0.0;
         if xa_org != xa {
             self.xd = 0.0;
@@ -150,6 +165,18 @@ impl Entity {
         self.x = f32::midpoint(self.bb.x0, self.bb.x1);
         self.y = self.bb.y0 + self.height_offset;
         self.z = f32::midpoint(self.bb.z0, self.bb.z1);
+    }
+
+    #[must_use]
+    pub fn is_in_water(&self) -> JBoolean {
+        self.level
+            .borrow()
+            .contains_liquid(&self.bb.grow(0.0, -0.4, 0.0), 1)
+    }
+
+    #[must_use]
+    pub fn is_in_lava(&self) -> JBoolean {
+        self.level.borrow().contains_liquid(&self.bb, 2)
     }
 
     pub fn move_relative(&mut self, mut xa: JFloat, mut za: JFloat, speed: JFloat) {

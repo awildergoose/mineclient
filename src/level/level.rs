@@ -1,12 +1,19 @@
-use std::{cell::RefCell, fs::File, io::Read, rc::Rc};
+use std::{
+    cell::RefCell,
+    fs::File,
+    io::{Read, Write},
+    rc::Rc,
+};
 
-use flate2::{Compression, read::GzDecoder, write::GzEncoder};
+use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use javarandom::JavaRandom;
-use std::io::Write;
 
 use crate::{
-    java::{JBoolean, JByte, JFloat, JInt},
-    level::{level_gen::LevelGen, level_listener::LevelListener, tile::tile::get_tile},
+    java::{JBoolean, JByte, JFloat, JInt, JLong},
+    level::{
+        level_listener::LevelListener,
+        tile::tile::{get_tile, Tile, TileTrait},
+    },
     phys::aabb::AABB,
 };
 
@@ -18,34 +25,46 @@ pub struct Level {
     light_depths: Vec<JInt>,
     level_listeners: Vec<Box<dyn LevelListener>>,
     pub random: Rc<RefCell<JavaRandom>>,
+    rand_value: JInt,
+    name: String,
+    creator: String,
+    create_time: JLong,
     unprocessed: JInt,
 }
 
+static TILE_UPDATE_INTERVAL: JInt = 200;
+static LEVEL_MULTIPLIER: JInt = 1_664_525;
+static LEVEL_ADDEND: JInt = 1_013_904_223;
+
 impl Level {
     #[must_use]
-    pub fn new(w: JInt, h: JInt, d: JInt) -> Self {
-        let w: usize = w as usize;
-        let h: usize = h as usize;
-        let d: usize = d as usize;
+    pub fn set_data(w: JInt, d: JInt, h: JInt, blocks: Vec<JByte>) -> Self {
+        let wu: usize = w as usize;
+        let hu: usize = h as usize;
 
+        let mut random = JavaRandom::with_seed(69);
+        let rand_value = random.next_int();
+        let random = Rc::new(RefCell::new(random));
         let mut this = Self {
-            width: w as JInt,
-            height: h as JInt,
-            depth: d as JInt,
-            blocks: vec![0i8; w * h * d],
-            light_depths: vec![0i32; w * h],
+            width: w,
+            height: h,
+            depth: d,
+            blocks,
+            rand_value,
+            name: String::new(),
+            creator: String::new(),
+            create_time: 0,
+            light_depths: vec![0i32; wu * hu],
             level_listeners: Vec::new(),
-            random: Rc::new(RefCell::new(JavaRandom::with_seed(69))),
+            random,
             unprocessed: 0,
         };
 
-        if let Err(err) = this.load() {
-            eprintln!("failed to load level: {err:?}");
-            this.blocks =
-                LevelGen::new(this.random.clone(), w as JInt, h as JInt, d as JInt).generate_map();
+        for ele in &this.level_listeners {
+            ele.all_changed();
         }
 
-        this.calc_light_depths(0, 0, w as JInt, h as JInt);
+        this.calc_light_depths(0, 0, w, h);
 
         this
     }
@@ -82,11 +101,6 @@ impl Level {
         Ok(())
     }
 
-    #[must_use]
-    pub const fn get_ground_level(&self) -> JFloat {
-        32.0
-    }
-
     pub fn calc_light_depths(&mut self, x0: JInt, y0: JInt, x1: JInt, y1: JInt) {
         for x in x0..x0 + x1 {
             for z in y0..y0 + y1 {
@@ -97,7 +111,7 @@ impl Level {
                     y -= 1;
                 }
 
-                self.light_depths[(x + z * self.width) as usize] = y;
+                self.light_depths[(x + z * self.width) as usize] = y + 1;
 
                 if old_depth != y {
                     let yl0 = if old_depth < y { old_depth } else { y };
@@ -132,51 +146,45 @@ impl Level {
 
     #[must_use]
     pub fn get_cubes(&self, aabb: AABB) -> Vec<AABB> {
-        let mut aabbs = Vec::new();
-        let mut x0 = aabb.x0 as JInt;
-        let mut x1 = aabb.x1 as JInt + 1;
-        let mut y0 = aabb.y0 as JInt;
-        let mut y1 = aabb.y1 as JInt + 1;
-        let mut z0 = aabb.z0 as JInt;
-        let mut z1 = aabb.z1 as JInt + 1;
-
-        if x0 < 0 {
-            x0 = 0;
-        }
-
-        if y0 < 0 {
-            y0 = 0;
-        }
-
-        if z0 < 0 {
-            z0 = 0;
-        }
-
-        if x1 > self.width {
-            x1 = self.width;
-        }
-
-        if y1 > self.depth {
-            y1 = self.depth;
-        }
-
-        if z1 > self.height {
-            z1 = self.height;
-        }
+        let mut boxes = vec![];
+        let x0 = f32::floor(aabb.x0) as JInt;
+        let x1 = f32::floor(aabb.x1 + 1.0) as JInt;
+        let y0 = f32::floor(aabb.y0) as JInt;
+        let y1 = f32::floor(aabb.y1 + 1.0) as JInt;
+        let z0 = f32::floor(aabb.z0) as JInt;
+        let z1 = f32::floor(aabb.z1 + 1.0) as JInt;
 
         for x in x0..x1 {
             for y in y0..y1 {
                 for z in z0..z1 {
-                    if let Some(tile) = get_tile(self.get_tile(x, y, z))
-                        && let Some(aabb) = tile.get_aabb(x, y, z)
+                    if x >= 0
+                        && y >= 0
+                        && z >= 0
+                        && x < self.width
+                        && y < self.depth
+                        && z < self.height
                     {
-                        aabbs.push(aabb);
+                        let tile = get_tile(self.get_tile(x, y, z));
+
+                        if let Some(tile) = tile {
+                            let aabb = tile.get_aabb(x, y, z);
+
+                            if let Some(aabb) = aabb {
+                                boxes.push(aabb);
+                            }
+                        }
+                    } else if x < 0 || y < 0 || z < 0 || x >= self.width || z >= self.height {
+                        let aabb = Tile::UNBREAKABLE.get_aabb(x, y, z);
+
+                        if let Some(aabb) = aabb {
+                            boxes.push(aabb);
+                        }
                     }
                 }
             }
         }
 
-        aabbs
+        boxes
     }
 
     pub fn set_tile(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) -> JBoolean {
@@ -188,6 +196,12 @@ impl Level {
                 false
             } else {
                 self.blocks[((y * height + z) * width + x) as usize] = type_ as JByte;
+                self.neighbor_changed(x - 1, y, z, type_);
+                self.neighbor_changed(x + 1, y, z, type_);
+                self.neighbor_changed(x, y - 1, z, type_);
+                self.neighbor_changed(x, y + 1, z, type_);
+                self.neighbor_changed(x, y, z - 1, type_);
+                self.neighbor_changed(x, y, z + 1, type_);
                 self.calc_light_depths(x, z, 1, 1);
 
                 for ele in &self.level_listeners {
@@ -198,6 +212,30 @@ impl Level {
             }
         } else {
             false
+        }
+    }
+
+    pub fn set_tile_no_update(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) -> JBoolean {
+        if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
+            if type_ == self.blocks[((y * self.height + z) * self.width + x) as usize].into() {
+                false
+            } else {
+                self.blocks[((y * self.height + z) * self.width + x) as usize] = type_ as JByte;
+                true
+            }
+        } else {
+            false
+        }
+    }
+
+    pub fn neighbor_changed(&self, x: JInt, y: JInt, z: JInt, type_: JInt) {
+        if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
+            let tile =
+                get_tile(self.blocks[((y * self.height + z) * self.width + x) as usize].into());
+
+            if let Some(tile) = tile {
+                tile.neighbor_changed(self, x, y, z, type_);
+            }
         }
     }
 
@@ -232,27 +270,131 @@ impl Level {
 
     pub fn tick(&mut self) {
         self.unprocessed += self.width * self.height * self.depth;
-        let ticks = self.unprocessed / 200;
-        self.unprocessed -= ticks * 200;
+        let ticks = self.unprocessed / TILE_UPDATE_INTERVAL;
+        self.unprocessed -= ticks * TILE_UPDATE_INTERVAL;
 
-        let w = self.width as u32;
-        let d = self.depth as u32;
-        let h = self.height as u32;
+        let w = self.width;
+        let d = self.depth;
+        let h = self.height;
 
         for _ in 0..ticks {
-            let (x, y, z) = {
-                let r = &mut self.random.borrow_mut();
-                (
-                    r.next_int_with_bound(w),
-                    r.next_int_with_bound(d),
-                    r.next_int_with_bound(h),
-                )
-            };
-            let tile_id = self.get_tile(x, y, z);
+            self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
+            let x = (self.rand_value >> 16) & (w - 1);
+            self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
+            let y = (self.rand_value >> 16) & (d - 1);
+            self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
+            let z = (self.rand_value >> 16) & (h - 1);
+            let id = self.blocks[((y * h + z) * w + x) as usize].into();
+            // if shouldTick[id] {
+            get_tile(id)
+                .unwrap()
+                .tick(self, x, y, z, self.random.clone());
+            // }
+        }
+    }
 
-            if let Some(tile) = get_tile(tile_id) {
-                tile.tick(self, x, y, z, self.random.clone());
+    #[must_use]
+    pub const fn get_ground_level(&self) -> JFloat {
+        32.0
+    }
+
+    #[must_use]
+    pub fn contains_any_liquid(&self, aabb: &AABB) -> JBoolean {
+        let mut x0 = f32::floor(aabb.x0) as JInt;
+        let mut x1 = f32::floor(aabb.x1 + 1.0) as JInt;
+        let mut y0 = f32::floor(aabb.y0) as JInt;
+        let mut y1 = f32::floor(aabb.y1 + 1.0) as JInt;
+        let mut z0 = f32::floor(aabb.z0) as JInt;
+        let mut z1 = f32::floor(aabb.z1 + 1.0) as JInt;
+
+        if x0 < 0 {
+            x0 = 0;
+        }
+
+        if y0 < 0 {
+            y0 = 0;
+        }
+
+        if z0 < 0 {
+            z0 = 0;
+        }
+
+        if x1 > self.width {
+            x1 = self.width;
+        }
+
+        if y1 > self.depth {
+            y1 = self.depth;
+        }
+
+        if z1 > self.height {
+            z1 = self.height;
+        }
+
+        for x in x0..x1 {
+            for y in y0..y1 {
+                for z in z0..z1 {
+                    let tile = get_tile(self.get_tile(x, y, z));
+
+                    if let Some(tile) = tile
+                        && tile.get_liquid_type() > 0
+                    {
+                        return true;
+                    }
+                }
             }
         }
+
+        false
+    }
+
+    #[must_use]
+    pub fn contains_liquid(&self, aabb: &AABB, liquid_id: JInt) -> JBoolean {
+        let mut x0 = f32::floor(aabb.x0) as JInt;
+        let mut x1 = f32::floor(aabb.x1 + 1.0) as JInt;
+        let mut y0 = f32::floor(aabb.y0) as JInt;
+        let mut y1 = f32::floor(aabb.y1 + 1.0) as JInt;
+        let mut z0 = f32::floor(aabb.z0) as JInt;
+        let mut z1 = f32::floor(aabb.z1 + 1.0) as JInt;
+
+        if x0 < 0 {
+            x0 = 0;
+        }
+
+        if y0 < 0 {
+            y0 = 0;
+        }
+
+        if z0 < 0 {
+            z0 = 0;
+        }
+
+        if x1 > self.width {
+            x1 = self.width;
+        }
+
+        if y1 > self.depth {
+            y1 = self.depth;
+        }
+
+        if z1 > self.height {
+            z1 = self.height;
+        }
+
+        for x in x0..x1 {
+            for y in y0..y1 {
+                for z in z0..z1 {
+                    let tile = get_tile(self.get_tile(x, y, z));
+
+                    if let Some(tile) = tile
+                        && tile.get_liquid_type() == liquid_id
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        false
     }
 }

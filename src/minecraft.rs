@@ -10,9 +10,9 @@ use crate::{
     gui::font::Font,
     hit_result::HitResult,
     java::{
-        JBoolean, JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy,
-        get_mouse_x, get_mouse_y, grab_mouse, init_display, is_display_close_requested,
-        is_key_down, is_mouse_button_just_pressed, update_display,
+        get_milli_time, get_mouse_dx, get_mouse_dy, get_mouse_x, get_mouse_y, grab_mouse,
+        init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
+        update_display, JBoolean, JFloat, JInt, WINDOW_CTX,
     },
     level::{chunk, frustum, level::Level, tile::tile::get_tile},
     particle::particle_engine::ParticleEngine,
@@ -149,7 +149,8 @@ impl Minecraft {
 
         check_gl_error("Startup");
 
-        let level = Rc::new(RefCell::new(Level::new(256, 256, 64)));
+        // TODO:
+        let level = Rc::new(RefCell::new(Level::set_data(256, 256, 64, vec![])));
 
         self.level = Some(level.clone());
         self.level_renderer = Some(LevelRenderer::new(level.clone(), self.textures.clone()));

@@ -11,11 +11,13 @@
 -   level/Coord.java
 -   level/DirtyChunkSorter.java
 -   level/DistanceSorter.java
+-   level/Level.java
 -   particle/ParticleEngine.java
 -   phys/AABB.java
 -   MinecraftApplet.java
 -   HitResult.java
 -   User.java
+-   Entity.java
 
 # partial (working but unfinished)
 
@@ -36,8 +38,6 @@
 -   level/levelgen/LevelGen.java
 -   level/tile/CalmLiquidTile.java
 -   level/tile/LiquidTile.java
--   level/Level.java
 -   level/LevelIO.java
 -   level/LevelLoaderListener.java
--   Entity.java
 -   Player.java
