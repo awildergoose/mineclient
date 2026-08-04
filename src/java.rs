@@ -208,7 +208,7 @@ pub fn init_display(width: JInt, height: JInt) {
     });
 }
 
-pub fn update_display() {
+pub fn internal_update() {
     FRAME_COUNTER.fetch_add(1, Ordering::SeqCst);
 
     WINDOW_CTX.with(|ctx_cell| {

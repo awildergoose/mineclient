@@ -18,6 +18,7 @@
 -   HitResult.java
 -   User.java
 -   Entity.java
+-   Player.java
 
 # partial (working but unfinished)
 
@@ -40,4 +41,3 @@
 -   level/tile/LiquidTile.java
 -   level/LevelIO.java
 -   level/LevelLoaderListener.java
--   Player.java

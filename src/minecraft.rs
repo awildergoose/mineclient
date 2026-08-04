@@ -3,7 +3,7 @@ use std::{
     fs::File,
     process,
     rc::Rc,
-    sync::{atomic::Ordering, Arc},
+    sync::{Arc, atomic::Ordering},
     thread,
     time::Duration,
 };
@@ -18,9 +18,9 @@ use crate::{
     gui::{font::Font, screen::ScreenTrait},
     hit_result::HitResult,
     java::{
-        get_milli_time, get_mouse_dx, get_mouse_dy, get_mouse_x, get_mouse_y, grab_mouse,
-        init_display, is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
-        update_display, JBoolean, JFloat, JInt, WINDOW_CTX,
+        JBoolean, JFloat, JInt, WINDOW_CTX, get_milli_time, get_mouse_dx, get_mouse_dy,
+        get_mouse_x, get_mouse_y, grab_mouse, init_display, internal_update,
+        is_display_close_requested, is_key_down, is_mouse_button_just_pressed,
     },
     level::{
         chunk, frustum, level::Level, level_gen::LevelGen, level_io::LevelIo,
@@ -716,7 +716,7 @@ impl Minecraft {
 
         self.draw_gui(a);
         check_gl_error("Rendered gui");
-        update_display();
+        internal_update();
     }
 
     fn draw_gui(&mut self, _a: JFloat) {
