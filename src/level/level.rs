@@ -5,14 +5,14 @@ use std::{
     rc::Rc,
 };
 
-use flate2::{read::GzDecoder, write::GzEncoder, Compression};
+use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 use javarandom::JavaRandom;
 
 use crate::{
     java::{JBoolean, JByte, JFloat, JInt, JLong},
     level::{
         level_listener::LevelListener,
-        tile::tile::{get_tile, Tile, TileTrait},
+        tile::tile::{Tile, TileTrait, get_tile},
     },
     phys::aabb::AABB,
 };
@@ -45,6 +45,7 @@ impl Level {
         let mut random = JavaRandom::with_seed(69);
         let rand_value = random.next_int();
         let random = Rc::new(RefCell::new(random));
+
         let mut this = Self {
             width: w,
             height: h,
@@ -60,11 +61,10 @@ impl Level {
             unprocessed: 0,
         };
 
+        this.calc_light_depths(0, 0, w, h);
         for ele in &this.level_listeners {
             ele.all_changed();
         }
-
-        this.calc_light_depths(0, 0, w, h);
 
         this
     }
@@ -141,7 +141,7 @@ impl Level {
 
     #[must_use]
     pub fn is_light_blocker(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        get_tile(self.get_tile(x, y, z)).is_some_and(super::tile::tile::TileTrait::blocks_light)
+        get_tile(self.get_tile(x, y, z)).is_some_and(TileTrait::blocks_light)
     }
 
     #[must_use]
@@ -188,14 +188,11 @@ impl Level {
     }
 
     pub fn set_tile(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) -> JBoolean {
-        let width = self.width;
-        let height = self.height;
-
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
             if type_ == JInt::from(self.blocks[((y * self.height + z) * self.width + x) as usize]) {
                 false
             } else {
-                self.blocks[((y * height + z) * width + x) as usize] = type_ as JByte;
+                self.blocks[((y * self.height + z) * self.width + x) as usize] = type_ as JByte;
                 self.neighbor_changed(x - 1, y, z, type_);
                 self.neighbor_changed(x + 1, y, z, type_);
                 self.neighbor_changed(x, y - 1, z, type_);
@@ -217,7 +214,7 @@ impl Level {
 
     pub fn set_tile_no_update(&mut self, x: JInt, y: JInt, z: JInt, type_: JInt) -> JBoolean {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            if type_ == self.blocks[((y * self.height + z) * self.width + x) as usize].into() {
+            if type_ == JInt::from(self.blocks[((y * self.height + z) * self.width + x) as usize]) {
                 false
             } else {
                 self.blocks[((y * self.height + z) * self.width + x) as usize] = type_ as JByte;
@@ -230,8 +227,9 @@ impl Level {
 
     pub fn neighbor_changed(&self, x: JInt, y: JInt, z: JInt, type_: JInt) {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
-            let tile =
-                get_tile(self.blocks[((y * self.height + z) * self.width + x) as usize].into());
+            let tile = get_tile(JInt::from(
+                self.blocks[((y * self.height + z) * self.width + x) as usize],
+            ));
 
             if let Some(tile) = tile {
                 tile.neighbor_changed(self, x, y, z, type_);
@@ -241,16 +239,17 @@ impl Level {
 
     #[must_use]
     pub fn is_lit(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        if x < 0 || y < 0 || z < 0 || x >= self.width || y >= self.depth || z >= self.height {
-            true
-        } else {
+        if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
             y >= self.light_depths[(x + z * self.width) as usize]
+        } else {
+            true
         }
     }
 
     #[must_use]
     pub fn get_tile(&self, x: JInt, y: JInt, z: JInt) -> JInt {
         if x >= 0 && y >= 0 && z >= 0 && x < self.width && y < self.depth && z < self.height {
+            // TODO: make this regular get in debug mode, perhaps
             unsafe {
                 JInt::from(
                     *self
@@ -265,7 +264,7 @@ impl Level {
 
     #[must_use]
     pub fn is_solid_tile(&self, x: JInt, y: JInt, z: JInt) -> JBoolean {
-        get_tile(self.get_tile(x, y, z)).is_some_and(super::tile::tile::TileTrait::is_solid)
+        get_tile(self.get_tile(x, y, z)).is_some_and(TileTrait::is_solid)
     }
 
     pub fn tick(&mut self) {
@@ -278,18 +277,27 @@ impl Level {
         let h = self.height;
 
         for _ in 0..ticks {
-            self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
+            self.rand_value = self
+                .rand_value
+                .wrapping_mul(LEVEL_MULTIPLIER)
+                .wrapping_add(LEVEL_ADDEND);
             let x = (self.rand_value >> 16) & (w - 1);
-            self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
+            self.rand_value = self
+                .rand_value
+                .wrapping_mul(LEVEL_MULTIPLIER)
+                .wrapping_add(LEVEL_ADDEND);
             let y = (self.rand_value >> 16) & (d - 1);
-            self.rand_value = self.rand_value * LEVEL_MULTIPLIER + LEVEL_ADDEND;
+            self.rand_value = self
+                .rand_value
+                .wrapping_mul(LEVEL_MULTIPLIER)
+                .wrapping_add(LEVEL_ADDEND);
             let z = (self.rand_value >> 16) & (h - 1);
             let id = self.blocks[((y * h + z) * w + x) as usize].into();
 
-            if let Some(tile) = get_tile(id) {
-                // if shouldTick[id] {
+            if let Some(tile) = get_tile(id)
+                && tile.base().ticking
+            {
                 tile.tick(self, x, y, z, self.random.clone());
-                // }
             }
         }
     }
@@ -338,7 +346,7 @@ impl Level {
                     let tile = get_tile(self.get_tile(x, y, z));
 
                     if let Some(tile) = tile
-                        && tile.get_liquid_type() > 0
+                        && tile.get_liquid_type() > Tile::LIQUID_NOT
                     {
                         return true;
                     }

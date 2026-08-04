@@ -47,30 +47,30 @@ impl Tesselator {
             unsafe {
                 let buffer = self.buffer.as_mut_ptr() as *const c_void;
                 if self.has_texture && self.has_color {
-                    gl::InterleavedArrays(10794, 0, buffer);
+                    gl::InterleavedArrays(gl::T2F_C3F_V3F, 0, buffer);
                 } else if self.has_texture {
-                    gl::InterleavedArrays(10791, 0, buffer);
+                    gl::InterleavedArrays(gl::T2F_V3F, 0, buffer);
                 } else if self.has_color {
-                    gl::InterleavedArrays(10788, 0, buffer);
+                    gl::InterleavedArrays(gl::C3F_V3F, 0, buffer);
                 } else {
-                    gl::InterleavedArrays(10785, 0, buffer);
+                    gl::InterleavedArrays(gl::V3F, 0, buffer);
                 }
 
-                gl::EnableClientState(32884);
+                gl::EnableClientState(gl::VERTEX_ARRAY);
                 if self.has_texture {
-                    gl::EnableClientState(32888);
+                    gl::EnableClientState(gl::TEXTURE_COORD_ARRAY);
                 }
                 if self.has_color {
-                    gl::EnableClientState(32886);
+                    gl::EnableClientState(gl::COLOR_ARRAY);
                 }
 
-                gl::DrawArrays(7, 0, self.vertices);
-                gl::DisableClientState(32884);
+                gl::DrawArrays(gl::QUADS, 0, self.vertices);
+                gl::DisableClientState(gl::VERTEX_ARRAY);
                 if self.has_texture {
-                    gl::DisableClientState(32888);
+                    gl::DisableClientState(gl::TEXTURE_COORD_ARRAY);
                 }
                 if self.has_color {
-                    gl::DisableClientState(32886);
+                    gl::DisableClientState(gl::COLOR_ARRAY);
                 }
             }
         }

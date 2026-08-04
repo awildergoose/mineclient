@@ -4,16 +4,16 @@ use crate::{
 };
 
 pub struct HitResult {
-    pub type_: i32,
-    pub x: i32,
-    pub y: i32,
-    pub z: i32,
-    pub f: i32,
+    pub type_: JInt,
+    pub x: JInt,
+    pub y: JInt,
+    pub z: JInt,
+    pub f: JInt,
 }
 
 impl HitResult {
     #[must_use]
-    pub const fn new(type_: i32, x: i32, y: i32, z: i32, f: i32) -> Self {
+    pub const fn new(type_: JInt, x: JInt, y: JInt, z: JInt, f: JInt) -> Self {
         Self { type_, x, y, z, f }
     }
 

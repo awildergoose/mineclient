@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    java::{math_random, JBoolean, JFloat, JInt},
-    level::level::Level,
+    java::{JBoolean, JFloat, JInt, math_random},
+    level::{level::Level, tile::tile::Tile},
     phys::aabb::AABB,
 };
 
@@ -171,17 +171,19 @@ impl Entity {
     pub fn is_in_water(&self) -> JBoolean {
         self.level
             .borrow()
-            .contains_liquid(&self.bb.grow(0.0, -0.4, 0.0), 1)
+            .contains_liquid(&self.bb.grow(0.0, -0.4, 0.0), Tile::LIQUID_WATER)
     }
 
     #[must_use]
     pub fn is_in_lava(&self) -> JBoolean {
-        self.level.borrow().contains_liquid(&self.bb, 2)
+        self.level
+            .borrow()
+            .contains_liquid(&self.bb, Tile::LIQUID_LAVA)
     }
 
     pub fn move_relative(&mut self, mut xa: JFloat, mut za: JFloat, speed: JFloat) {
         let mut dist = xa.mul_add(xa, za * za);
-        if !(dist < 0.01) {
+        if dist >= 0.01 {
             dist = speed / dist.sqrt();
             xa *= dist;
             za *= dist;

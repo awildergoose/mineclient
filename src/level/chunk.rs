@@ -129,7 +129,7 @@ impl Chunk {
 
         for i in 0..3 {
             unsafe {
-                gl::NewList(self.lists + i, 4864);
+                gl::NewList(self.lists + i, gl::COMPILE);
                 gl::EndList();
             }
         }

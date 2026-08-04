@@ -7,6 +7,7 @@ use crate::{
     particle::particle::Particle,
     player::Player,
     renderer::{tesselator::Tesselator, textures::Textures},
+    traits::Tickable,
 };
 
 pub struct ParticleEngine {
@@ -36,9 +37,9 @@ impl ParticleEngine {
     }
 
     pub fn tick(&mut self) {
-        self.particles
-            .iter_mut()
-            .for_each(super::super::traits::Tickable::tick);
+        // Technically, the original code checks if the particle was removed right after it ticks
+        // but this shouldn't matter here...hopefully.
+        self.particles.iter_mut().for_each(Tickable::tick);
         self.particles.retain(|z| !z.removed);
     }
 
@@ -48,9 +49,9 @@ impl ParticleEngine {
         }
 
         unsafe {
-            gl::Enable(3553);
+            gl::Enable(gl::TEXTURE_2D);
             gl::BindTexture(
-                3553,
+                gl::TEXTURE_2D,
                 self.textures.borrow_mut().load_texture("terrain.png", 9728),
             );
         }
@@ -74,6 +75,6 @@ impl ParticleEngine {
 
         t.end();
 
-        unsafe { gl::Disable(3553) }
+        unsafe { gl::Disable(gl::TEXTURE_2D) }
     }
 }

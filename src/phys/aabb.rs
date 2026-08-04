@@ -81,7 +81,8 @@ impl AABB {
     #[must_use]
     pub fn clone_move(&self, xa: JFloat, ya: JFloat, za: JFloat) -> Self {
         Self::new(
-            self.x0 + xa,
+            // Yes, this is wrong, it's written wrong in the original lol
+            self.x0 + za,
             self.y0 + ya,
             self.z0 + za,
             self.x1 + xa,

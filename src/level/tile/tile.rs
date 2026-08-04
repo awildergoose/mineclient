@@ -43,7 +43,8 @@ pub fn get_tile(id: i32) -> Option<&'static dyn TileTrait> {
 pub trait TileTrait: Send + Sync {
     fn base(&self) -> &Tile;
 
-    fn get_texture(&self, _face: JInt) -> JInt {
+    fn get_texture(&self, face: JInt) -> JInt {
+        let _ = face;
         self.base().tex
     }
 
@@ -55,14 +56,12 @@ pub trait TileTrait: Send + Sync {
         true
     }
 
-    fn tick(
-        &self,
-        _level: &mut Level,
-        _x: JInt,
-        _y: JInt,
-        _z: JInt,
-        _random: Rc<RefCell<JavaRandom>>,
-    ) {
+    fn tick(&self, level: &mut Level, x: JInt, y: JInt, z: JInt, random: Rc<RefCell<JavaRandom>>) {
+        let _ = level;
+        let _ = x;
+        let _ = y;
+        let _ = z;
+        let _ = random;
     }
 
     fn destroy(
@@ -153,8 +152,9 @@ pub trait TileTrait: Send + Sync {
         y: JInt,
         z: JInt,
         layer: JInt,
-        _face: JInt,
+        face: JInt,
     ) -> JBoolean {
+        let _ = face;
         let mut layer_ok = true;
 
         if layer == 2 {
@@ -338,10 +338,16 @@ pub trait TileTrait: Send + Sync {
     }
 
     fn get_liquid_type(&self) -> JInt {
-        0
+        Tile::LIQUID_NOT
     }
 
-    fn neighbor_changed(&self, _level: &Level, _x: JInt, _y: JInt, _z: JInt, _type: JInt) {}
+    fn neighbor_changed(&self, level: &Level, x: JInt, y: JInt, z: JInt, type_: JInt) {
+        let _ = level;
+        let _ = x;
+        let _ = y;
+        let _ = z;
+        let _ = type_;
+    }
 }
 
 impl Tile {
